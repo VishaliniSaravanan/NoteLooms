@@ -13,6 +13,10 @@ node_modules/
 /dist
 /build
 
+# Uploads (user files)
+uploads/*
+!uploads/.gitkeep
+
 # Misc
 .DS_Store
 .env.local

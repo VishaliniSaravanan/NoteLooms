@@ -169,26 +169,6 @@ See [docs/API.md](docs/API.md) for full reference.
 
 ---
 
-## 🤝 Contributing
-
-1. Check [Backend/README.md](Backend/README.md) for setup
-2. Make your changes
-3. Test locally before pushing
-4. Update relevant documentation
-
----
-
-## 📝 License
-
-[Add your license here]
-
----
-
-**Last Updated**: December 2025  
-**Status**: Production Ready
-
----
-
 ## 🛠️ Dependencies
 
 ### **Core Framework**

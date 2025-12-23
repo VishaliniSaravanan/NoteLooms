@@ -1,0 +1,23 @@
+#root {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.card {
+  padding: 24px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Remove logo animations for a cleaner look */
+.logo {
+  display: none;
+}

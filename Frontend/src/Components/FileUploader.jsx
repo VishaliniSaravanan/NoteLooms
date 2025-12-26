@@ -6,6 +6,7 @@ function FileUploader({ onFileUpload, multiple = false }) {
   const [dragActive, setDragActive] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -32,6 +33,8 @@ function FileUploader({ onFileUpload, multiple = false }) {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
       onFileUpload(files);
+      // Reset input value to allow selecting the same file again
+      e.target.value = "";
     }
   };
 
@@ -44,14 +47,11 @@ function FileUploader({ onFileUpload, multiple = false }) {
   };
 
   const onButtonClick = () => {
-    fileInputRef.current.click();
+    fileInputRef.current?.click();
   };
 
   const handleCameraClick = () => {
-    if (!fileInputRef.current) return;
-    fileInputRef.current.setAttribute("capture", "environment");
-    fileInputRef.current.setAttribute("accept", "image/*");
-    fileInputRef.current.click();
+    cameraInputRef.current?.click();
   };
 
   return (
@@ -79,6 +79,15 @@ function FileUploader({ onFileUpload, multiple = false }) {
           className="hidden"
           accept=".pdf,.png,.jpg,.jpeg,image/*"
           multiple={multiple}
+        />
+        {/* Separate input for camera to prevent attribute conflicts */}
+        <input
+          type="file"
+          ref={cameraInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/*"
+          capture="environment"
         />
         <svg
           className="mx-auto h-12 w-12 text-[--text-secondary]"
@@ -110,14 +119,14 @@ function FileUploader({ onFileUpload, multiple = false }) {
           onClick={onButtonClick}
           className={`mt-4 px-6 py-2 rounded-lg font-medium glass-button text-white transition-all duration-200 shadow-sm hover:shadow-md`}
         >
-          Select Files
+          Upload Files
         </button>
         <button
           type="button"
           onClick={handleCameraClick}
           className="mt-3 px-4 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto block sm:hidden"
         >
-          Take a photo (mobile)
+          Take a Photo
         </button>
       </div>
 

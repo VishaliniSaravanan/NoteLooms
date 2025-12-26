@@ -1,18 +1,20 @@
 // API Configuration
 // 
 // IMPORTANT FOR DEPLOYMENT (Render, Vercel, etc.):
-// - You MUST set VITE_API_BASE environment variable to your backend URL
-// - Example: VITE_API_BASE=https://your-backend.onrender.com
+// - You MUST set VITE_BACKEND_URL or VITE_API_BASE environment variable to your backend URL
+// - Example: VITE_BACKEND_URL=https://your-backend.onrender.com
 // - The backend URL must be publicly accessible (not localhost/127.0.0.1)
 // - Backend URL should use HTTPS if frontend uses HTTPS (browser security requirement)
 // - Mobile devices cannot access localhost - they need the actual backend URL
 //
 // For local development:
 // - Defaults to http://127.0.0.1:5000 (works on same machine only)
-// - Or create .env.local with: VITE_API_BASE=http://127.0.0.1:5000
+// - Or create .env.local with: VITE_BACKEND_URL=http://127.0.0.1:5000
 
 const getApiBase = () => {
-  const envApiBase = import.meta.env.VITE_API_BASE;
+  // Support both VITE_API_BASE and VITE_BACKEND_URL for compatibility
+  // Prefer VITE_API_BASE if set
+  const envApiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_BACKEND_URL;
   
   if (envApiBase) {
     return envApiBase;
@@ -26,17 +28,17 @@ const getApiBase = () => {
                        !window.location.hostname.startsWith('10.');
   
   if (isProduction) {
-    // In production without VITE_API_BASE set, this will fail on mobile
+    // In production without VITE_BACKEND_URL or VITE_API_BASE set, this will fail on mobile
     // Log warning to help debug the issue
     console.warn(
-      '⚠️ VITE_API_BASE environment variable is not set! ' +
+      '⚠️ VITE_BACKEND_URL or VITE_API_BASE environment variable is not set! ' +
       'Backend API calls may fail, especially on mobile devices. ' +
-      'Please set VITE_API_BASE to your backend URL ' +
+      'Please set VITE_BACKEND_URL (or VITE_API_BASE) to your backend URL ' +
       '(e.g., https://your-backend.onrender.com) in your deployment environment variables ' +
       'and rebuild the frontend.'
     );
     // Fallback to relative path (will only work if backend is on same domain with proxy)
-    // For separate services on Render, this will fail - user MUST set VITE_API_BASE
+    // For separate services on Render, this will fail - user MUST set VITE_BACKEND_URL or VITE_API_BASE
     return '/api';
   }
   

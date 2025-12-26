@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 from werkzeug.utils import secure_filename
 import pymupdf as fitz
-import google.generativeai as genai
+from google import genai
 import pytesseract
 from pdf2image import convert_from_path
 import cv2

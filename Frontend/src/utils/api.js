@@ -16,6 +16,14 @@ const getApiBase = () => {
   // Prefer VITE_API_BASE if set
   const envApiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_BACKEND_URL;
   
+  // Debug logging to help troubleshoot
+  console.log('🔍 API Configuration Debug:', {
+    'VITE_API_BASE': import.meta.env.VITE_API_BASE,
+    'VITE_BACKEND_URL': import.meta.env.VITE_BACKEND_URL,
+    'Using': envApiBase || 'FALLBACK',
+    'import.meta.env': import.meta.env
+  });
+  
   if (envApiBase) {
     return envApiBase;
   }

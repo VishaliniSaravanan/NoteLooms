@@ -14,15 +14,19 @@
 const getApiBase = () => {
   // Support both VITE_API_BASE and VITE_BACKEND_URL for compatibility
   // Prefer VITE_API_BASE if set
-  const envApiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_BACKEND_URL;
+  // TEMPORARY FIX: Fallback to hardcoded backend URL if env vars not available during build
+  const envApiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_BACKEND_URL || 'https://notelooms.onrender.com';
   
   // Debug logging to help troubleshoot
-  console.log('🔍 API Configuration Debug:', {
-    'VITE_API_BASE': import.meta.env.VITE_API_BASE,
-    'VITE_BACKEND_URL': import.meta.env.VITE_BACKEND_URL,
-    'Using': envApiBase || 'FALLBACK',
-    'import.meta.env': import.meta.env
-  });
+  if (typeof window !== 'undefined') {
+    console.log('🔍 API Configuration Debug:', {
+      'VITE_API_BASE': import.meta.env.VITE_API_BASE,
+      'VITE_BACKEND_URL': import.meta.env.VITE_BACKEND_URL,
+      'Using': envApiBase || 'FALLBACK',
+      'Mode': import.meta.env.MODE,
+      'All env vars': Object.keys(import.meta.env).filter(k => k.startsWith('VITE_'))
+    });
+  }
   
   if (envApiBase) {
     return envApiBase;

@@ -1,13 +1,7 @@
 FROM node:20-alpine AS build
 
-# Accept build arguments for environment variables
-ARG VITE_API_BASE
-ARG VITE_BACKEND_URL
-
-# Set as environment variables for the build process
-ENV VITE_API_BASE=$VITE_API_BASE
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
-
+# Render passes environment variables automatically to Docker builds
+# Vite will read VITE_* prefixed environment variables during build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

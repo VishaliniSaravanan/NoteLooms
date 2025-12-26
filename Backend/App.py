@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 from werkzeug.utils import secure_filename
 import pymupdf as fitz
-from google import genai
+import google.generativeai as genai
 import pytesseract
 from pdf2image import convert_from_path
 import cv2
@@ -75,10 +75,13 @@ else:
     logger.warning("GEMINI_API_KEY not found in environment variables")
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
-# Initialize RAG if available
+# Initialize RAG if available (disabled by default on free tier due to memory constraints)
+# Set ENABLE_RAG=1 environment variable to enable RAG processing
 rag_processor = None
 rag_init_error = None
-if RAGProcessor is not None:
+ENABLE_RAG = os.getenv("ENABLE_RAG", "0").lower() in ("1", "true", "yes")
+
+if ENABLE_RAG and RAGProcessor is not None:
     try:
         # Get the directory where App.py is located
         backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -104,7 +107,9 @@ if RAGProcessor is not None:
         logger.error(f"RAG processor initialization failed: {e}", exc_info=True)
         rag_processor = None
 else:
-    if rag_import_error:
+    if not ENABLE_RAG:
+        logger.info("RAG processor disabled (set ENABLE_RAG=1 to enable - requires more memory)")
+    elif rag_import_error:
         logger.warning(f"RAG processor not available - import failed: {rag_import_error}")
     else:
         logger.warning("RAG processor not available - RAGProcessor class is None")

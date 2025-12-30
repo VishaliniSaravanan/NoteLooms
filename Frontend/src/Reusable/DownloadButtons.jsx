@@ -10,15 +10,15 @@ const DownloadButtons = ({ contentType, handleDownload }) => {
   };
 
   return (
-    <div className="flex justify-center gap-4 mt-6">
+    <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mt-4 sm:mt-6 px-2">
       {["pdf", "txt", "docx"].map((format) => (
         <button
           key={format}
           onClick={() => handleButtonClick(format)}
-          className="px-6 py-2 rounded-lg font-medium text-white glass-button transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs rounded-md font-medium text-white glass-button transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
           aria-label={`Download as ${format.toUpperCase()}`}
         >
-          Download as {format.toUpperCase()}
+          {format.toUpperCase()}
         </button>
       ))}
     </div>

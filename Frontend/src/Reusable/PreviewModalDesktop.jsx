@@ -10,16 +10,34 @@ const PreviewModalDesktop = ({
   handleFileUpload,
   isLoading,
   onClose,
+  isChatbotVisible = false,
+  mobileTab = 'chat',
 }) => {
-  // When uploading, show a slim bottom status bar instead of blocking the whole page
+  // When uploading, show a slim status bar just above the mobile navigation buttons
+  // Positioned above chat and menu icons on mobile, at bottom on desktop
+  // Hide when chat box or hamburger menu is opened (instead of moving it)
   if (isLoading && previewFiles.length > 0) {
+    // Check if chat or menu is open - hide the message if either is open
+    const isMenuOpen = mobileTab === 'menu';
+    const isChatOpen = isChatbotVisible;
+    
+    // Hide the message when menu or chat is open on mobile
+    if ((isMenuOpen || isChatOpen) && typeof window !== 'undefined' && window.innerWidth < 1024) {
+      return null;
+    }
+    
     return (
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-md">
-        <div className="glass rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm text-[--text-primary] border border-[--border-color]">
+      <div 
+        className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-md lg:bottom-4"
+        style={{ 
+          bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
+        }}
+      >
+        <div className="glass rounded-xl px-3 py-2.5 flex items-center justify-center gap-2 text-sm text-[--text-primary] border border-[--border-color]">
           <span className="animate-spin">
             <IconLoading className="w-4 h-4" />
           </span>
-          <span>Uploading your files… You can keep exploring the page while this finishes.</span>
+          <span className="text-xs sm:text-sm">Uploading your files… You can keep exploring the page while this finishes.</span>
         </div>
       </div>
     );

@@ -121,13 +121,6 @@ function FileUploader({ onFileUpload, multiple = false }) {
         >
           Upload Files
         </button>
-        <button
-          type="button"
-          onClick={handleCameraClick}
-          className="mt-3 px-4 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto block sm:hidden"
-        >
-          Take a Photo
-        </button>
       </div>
 
       <div className="space-y-3">

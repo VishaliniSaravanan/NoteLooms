@@ -33,7 +33,7 @@ function Chatbot({ content, onClose }) {
     if (isMobileOrTablet) {
       return {
         sender: "bot",
-        text: "Hi! I'm your study assistant. I can help with your uploaded notes or homework (including photos), explain concepts, and answer general knowledge questions—always in a clear, focused way. What would you like to work on today?"
+        text: "Hi! I'm your study assistant. I can help with your uploaded notes (including photos), explain concepts, and answer general knowledge questions—always in a clear, focused way. What would you like to work on today?"
       };
     } else {
       return {
@@ -166,6 +166,7 @@ function Chatbot({ content, onClose }) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
+      style={{ minHeight: '300px' }}
     >
       <div
         className="chatbot-header p-4 flex justify-between items-center bg-[--bg-secondary] text-[--text-primary] border-b border-[--border-color]"
@@ -220,7 +221,7 @@ function Chatbot({ content, onClose }) {
       </div>
 
       <div
-        className="p-4 border-t flex items-center gap-2 border-[--border-color] bg-[--bg-secondary] relative"
+        className="p-3 sm:p-4 border-t flex items-center gap-2 border-[--border-color] bg-[--bg-secondary] relative z-10"
       >
         <AnimatePresence>
           {showEmojiPicker && (
@@ -230,7 +231,7 @@ function Chatbot({ content, onClose }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-full left-0 mb-2 w-80 sm:w-96 bg-[--card-bg] border border-[--border-color] rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden flex flex-col"
+              className="absolute bottom-full left-0 mb-2 w-80 sm:w-96 bg-[--card-bg] border border-[--border-color] rounded-xl shadow-2xl z-[60] max-h-96 overflow-hidden flex flex-col"
             >
               <div className="p-3 border-b border-[--border-color] bg-[--bg-secondary] flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-[--text-primary]">Emoji Picker</h4>
@@ -267,13 +268,13 @@ function Chatbot({ content, onClose }) {
         </AnimatePresence>
         <motion.button
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="p-2 rounded-lg hover:bg-[--hover-bg] text-[--text-secondary] hover:text-[--text-primary] transition-all duration-200"
+          className="p-2 rounded-lg hover:bg-[--hover-bg] text-[--text-secondary] hover:text-[--text-primary] transition-all duration-200 flex-shrink-0 z-10"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           disabled={isLoading}
           aria-label="Open emoji picker"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </motion.button>
@@ -283,7 +284,7 @@ function Chatbot({ content, onClose }) {
           onChange={(e) => setUserInput(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Type your message... "
-          className="flex-1 px-4 py-2.5 rounded-lg border outline-none bg-[--bg-primary] border-[--border-color] text-[--text-primary] placeholder:text-[--text-tertiary] focus:ring-2 focus:ring-[--accent-primary] focus:border-[--accent-primary] transition-all duration-200"
+          className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border outline-none bg-[--bg-primary] border-[--border-color] text-[--text-primary] placeholder:text-[--text-tertiary] focus:ring-2 focus:ring-[--accent-primary] focus:border-[--accent-primary] transition-all duration-200 text-sm sm:text-base"
           disabled={isLoading}
         />
         <motion.button

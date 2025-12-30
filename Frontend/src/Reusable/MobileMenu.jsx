@@ -1,23 +1,33 @@
 import { motion, AnimatePresence } from "framer-motion";
 
 const MobileMenu = ({ mobileTab, setMobileTab, activeSection, setActiveSection }) => {
+  // Button is at bottom: calc(env(safe-area-inset-bottom) + 1.5rem)
+  // Button height is 3.5rem (w-14 h-14 = 56px)
+  // Menu should appear above the button with some spacing
+  // Total: env(safe-area-inset-bottom) + 1.5rem + 3.5rem + 0.5rem = env(safe-area-inset-bottom) + 5.5rem
+  
   return (
     <AnimatePresence>
       {(mobileTab === "menu" || (window.innerWidth >= 1024 && mobileTab === "menu")) && (
-        <motion.div
-          className="fixed inset-0 bg-black/50 z-40 flex items-end justify-start lg:hidden"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setMobileTab("chat")}
-        >
+        <>
+          {/* Backdrop */}
           <motion.div
-            className="w-full bg-[--bg-primary] rounded-tr-3xl p-6 max-h-[80vh] overflow-y-auto"
-            style={{ borderTopRightRadius: '1.5rem', borderTopLeftRadius: '0' }}
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileTab("chat")}
+          />
+          {/* Menu Popup - appears above buttons */}
+          <motion.div
+            className="fixed left-4 right-4 bg-[--bg-primary] rounded-2xl p-6 max-h-[70vh] overflow-y-auto z-50 lg:hidden glass shadow-2xl border border-[--border-color]"
+            style={{ 
+              bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
+            }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >
             <nav className="space-y-3">
@@ -45,7 +55,7 @@ const MobileMenu = ({ mobileTab, setMobileTab, activeSection, setActiveSection }
               ))}
             </nav>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

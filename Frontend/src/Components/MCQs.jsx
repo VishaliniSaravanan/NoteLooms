@@ -255,31 +255,51 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
   }
 
   return (
-    <div className="h-[calc(100vh-200px)] overflow-y-auto">
-      <div className="card p-6 bg-gradient-to-br from-[#050816] via-[#0b1e70] to-[#020617] border border-[--border-color] text-white min-h-full">
-        <div className="sticky top-0 bg-gradient-to-b from-[#050816] to-transparent pb-4 -mx-6 px-6 -mt-6 pt-6">
+    <div className="w-full">
+      <div className="card p-4 sm:p-6 bg-[--bg-primary] border border-[--border-color]">
+        <div className="pb-4">
           <h2 className="text-2xl font-semibold mb-2 text-[--accent-primary] text-center">MCQ Test</h2>
-          <p className="text-sm text-white/80 text-center">
+          <p className="text-sm text-[--text-secondary] text-center">
             Choose how many questions you want and then start a focused, full-screen test.
           </p>
         </div>
         <div className="flex flex-col items-center justify-center space-y-6 mt-4">
-          <div className="w-full max-w-2xl bg-white/5 rounded-lg p-4">
-            <label className="block text-sm font-medium text-white/80 mb-2">
+          <div className="w-full max-w-2xl bg-[--bg-secondary] rounded-lg p-4">
+            <label className="block text-sm font-medium text-[--text-secondary] mb-2">
               Number of Questions: {effectiveNumQuestions} (max {totalAvailable})
             </label>
-            <select
+            <input
+              type="number"
               value={numQuestions}
-              onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+              onChange={(e) => {
+                const inputValue = e.target.value;
+                // Allow empty input while typing
+                if (inputValue === '') {
+                  setNumQuestions('');
+                  return;
+                }
+                const value = parseInt(inputValue, 10);
+                if (!isNaN(value) && value >= 1 && value <= Math.min(40, totalAvailable)) {
+                  setNumQuestions(value);
+                }
+              }}
+              onBlur={(e) => {
+                // Ensure valid value on blur
+                const value = parseInt(e.target.value, 10);
+                if (isNaN(value) || value < 1) {
+                  setNumQuestions(10);
+                } else if (value > Math.min(40, totalAvailable)) {
+                  setNumQuestions(Math.min(40, totalAvailable));
+                }
+              }}
+              min="1"
+              max={Math.min(40, totalAvailable)}
               className="w-full px-3 py-2 rounded-lg bg-[--bg-primary] border border-[--border-color] text-[--text-primary] focus:ring-2 focus:ring-[--accent-primary] transition-all"
-            >
-              <option value={10}>10 Questions</option>
-              <option value={20}>20 Questions</option>
-              <option value={30}>30 Questions</option>
-            </select>
+              placeholder="Enter number of questions"
+            />
           </div>
-          <div className="w-full max-w-2xl bg-white/5 rounded-lg p-4">
-            <label className="block text-sm font-medium text-white/80 mb-2">
+          <div className="w-full max-w-2xl bg-[--bg-secondary] rounded-lg p-4">
+            <label className="block text-sm font-medium text-[--text-secondary] mb-2">
               Timer:
             </label>
             <select
@@ -293,8 +313,8 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
               <option value={30}>30 minutes</option>
             </select>
           </div>
-          <p className="text-xs text-white/70 text-center">
-            Available MCQs from this content: <span className="font-semibold">{totalAvailable}</span>. 
+          <p className="text-xs text-[--text-tertiary] text-center">
+            Available MCQs from this content: <span className="font-semibold text-[--text-secondary]">{totalAvailable}</span>. 
             The test will use up to your chosen amount.
           </p>
 
@@ -317,7 +337,8 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
           className="fixed inset-0 z-[9999] bg-[#050816] text-white flex flex-col overflow-hidden"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
-            paddingBottom: 'env(safe-area-inset-bottom)'
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            backgroundColor: '#050816'
           }}
           onClick={exitTest}
         >
@@ -336,7 +357,7 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
                 {!testFinished && (
                   <div className="flex flex-col items-end gap-1 text-xs sm:text-sm text-white/80" onClick={(e) => e.stopPropagation()}>
                     <span className="font-semibold">
-                      Question {currentIndex + 1} / {testMcqs.length}
+                      Qn {currentIndex + 1} / {testMcqs.length}
                     </span>
                     {timerMinutes > 0 && (
                       <span className="font-mono px-2 py-1 rounded bg-blue-600/30 border border-blue-400/50">
@@ -350,16 +371,13 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
 
             {/* Content area with max-width container */}
             <div 
-              className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto question-area" 
+              className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-6 pb-8 sm:pb-12 question-area overflow-y-auto" 
               onClick={(e) => e.stopPropagation()}
-              style={{
-                maxHeight: 'calc(100vh - 3.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
-              }}
             >
-              <div className="max-w-5xl w-full mx-auto flex flex-col gap-4 flex-1">
+              <div className="max-w-5xl w-full mx-auto flex flex-col gap-4 flex-1 min-h-0">
                 {/* Progress bar */}
                 {!testFinished && (
-                  <div className="w-full bg-white/10 rounded-full h-2">
+                  <div className="w-full bg-white/10 rounded-full h-2 flex-shrink-0">
                     <div
                       className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
                       style={{
@@ -370,11 +388,11 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
                 )}
 
                 {/* Question content */}
-                <div className="flex-1 flex flex-col bg-white/5 border border-white/10 rounded-2xl shadow-2xl px-4 sm:px-6 py-6 sm:py-8 backdrop-blur">
+                <div className="flex-1 flex flex-col bg-white/5 border border-white/10 rounded-2xl shadow-2xl px-4 sm:px-6 py-6 sm:py-8 backdrop-blur min-h-0">
                   {!testFinished ? (
                     <>
-                      <div className="mb-6 sm:mb-8">
-                        <h3 className="text-xl sm:text-2xl font-semibold mb-4">
+                      <div className="mb-6 sm:mb-8 flex-shrink-0">
+                        <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-4">
                           {currentIndex + 1}. {testMcqs[currentIndex]?.question}
                         </h3>
                         <div className="space-y-3 sm:space-y-4">
@@ -385,7 +403,7 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
                               <button
                                 key={idx}
                                 onClick={() => handleOptionSelect(letter)}
-                                className={`w-full text-left py-3 px-4 rounded-lg border transition-all duration-200 ${
+                                className={`w-full text-left py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border transition-all duration-200 text-sm sm:text-base ${
                                   isSelected
                                     ? "bg-blue-600/80 border-blue-300 text-white shadow-lg"
                                     : "bg-white/5 border-white/15 text-white/80 hover:bg-white/10 hover:border-blue-300/70"
@@ -399,7 +417,7 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
                         </div>
                       </div>
 
-                      <div className="mt-auto flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10">
+                      <div className="mt-auto flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 pb-2 border-t border-white/10 flex-shrink-0">
                         <button
                           onClick={exitTest}
                           className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-red-500/20 hover:text-red-200 transition-colors text-xs sm:text-sm"

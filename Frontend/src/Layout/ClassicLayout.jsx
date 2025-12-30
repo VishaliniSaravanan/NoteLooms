@@ -127,36 +127,36 @@ const ClassicLayout = (props) => {
         transition={{ duration: 0.5 }}
       >
         {/* Header */}
-        <header className={`glass shadow-xl py-4`}>
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <h1 className="text-4xl sm:text-5xl font-bold text-[--accent-primary] leading-tight">
+        <header className={`glass shadow-xl py-3 sm:py-4`}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+              <div className="flex flex-col min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-[--accent-primary] leading-tight truncate">
                   NOTELOOMS
                 </h1>
-                <p className="text-sm sm:text-base text-[--text-secondary] mt-1">
+                <p className="text-xs sm:text-sm lg:text-base text-[--text-secondary] mt-1 hidden sm:block">
                   Transform your content into AI-powered study tools
                 </p>
               </div>
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-2 sm:gap-3 items-center flex-wrap sm:flex-nowrap">
                 <button
                   onClick={() => setIsSessionHistoryOpen(true)}
-                  className="px-5 py-2 text-sm rounded-lg font-medium glass-button text-white transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-2"
+                  className="p-2 sm:px-5 sm:py-2 rounded-lg font-medium glass-button text-white transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                   title="View Session History"
                 >
-                  <IconArchive className="w-4 h-4" />
-                  <span className="hidden sm:inline">History</span>
+                  <IconArchive className="w-4 h-4 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline text-sm">History</span>
                 </button>
                 {uploadedFiles.length > 0 && (
                   <button
                     onClick={handleSaveSession}
-                    className="px-5 py-2 text-sm rounded-lg font-medium glass-button text-white transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-2"
+                    className="p-2 sm:px-5 sm:py-2 rounded-lg font-medium glass-button text-white transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                     title="Save Current Session"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    <span className="hidden sm:inline">Save</span>
+                    <span className="hidden sm:inline text-sm">Save</span>
                   </button>
                 )}
                 <button
@@ -167,7 +167,7 @@ const ClassicLayout = (props) => {
                 </button>
                 <button
                   onClick={handleReset}
-                  className="px-5 py-2 text-sm rounded-lg font-medium bg-[--error-color] text-white hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                  className="px-3 py-2 sm:px-5 sm:py-2 text-xs sm:text-sm rounded-lg font-medium bg-[--error-color] text-white hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
                 >
                   Reset
                 </button>
@@ -270,6 +270,8 @@ const ClassicLayout = (props) => {
               handleFileUpload={handleFileUpload}
               isLoading={isLoading}
               onClose={() => setIsPreviewModalOpen(false)}
+              isChatbotVisible={isChatbotVisible}
+              mobileTab={mobileTab}
             />
           </Suspense>
 

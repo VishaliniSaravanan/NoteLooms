@@ -1,6 +1,6 @@
 // API Configuration
 // 
-// IMPORTANT FOR DEPLOYMENT (Render, Vercel, etc.):
+// IMPORTANT FOR DEPLOYMENT (Render):
 // - You MUST set VITE_BACKEND_URL or VITE_API_BASE environment variable to your backend URL
 // - Example: VITE_BACKEND_URL=https://your-backend.onrender.com
 // - The backend URL must be publicly accessible (not localhost/127.0.0.1)

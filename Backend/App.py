@@ -73,7 +73,18 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 else:
     logger.warning("GEMINI_API_KEY not found in environment variables")
-youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+
+# Initialize YouTube API client conditionally
+youtube = None
+if YOUTUBE_API_KEY:
+    try:
+        youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+        logger.info("✓ YouTube API client initialized successfully")
+    except Exception as e:
+        logger.warning(f"YouTube API client initialization failed: {e}")
+        youtube = None
+else:
+    logger.warning("YOUTUBE_API_KEY not found - YouTube metadata extraction will be unavailable (transcript extraction will still work)")
 
 # Initialize RAG if available (disabled by default on free tier due to memory constraints)
 # Set ENABLE_RAG=1 environment variable to enable RAG processing
@@ -384,9 +395,13 @@ def extract_text_from_scanned_pdf(pdf_path: str, max_pages: int = 20, dpi: int =
 def extract_text_from_youtube(url):
     """Extract text and transcript from YouTube video"""
     try:
+        logger.info(f"Starting YouTube extraction for URL: {url}")
         video_id = extract_video_id(url)
         if not video_id:
+            logger.error(f"Could not extract video ID from URL: {url}")
             return None, None
+        
+        logger.info(f"Extracted video ID: {video_id}")
         
         # Try to get transcript with advanced method
         transcript_data = get_youtube_transcript_advanced(url)
@@ -395,22 +410,36 @@ def extract_text_from_youtube(url):
         extracted_text = None
         if transcript_data:
             extracted_text = " ".join([entry["text"] for entry in transcript_data])
+            logger.info(f"✓ Successfully extracted {len(transcript_data)} transcript segments")
+        else:
+            logger.warning(f"No transcript data retrieved for video: {video_id}")
         
         # If no transcript, try to get metadata
         if not extracted_text:
-            try:
-                request = youtube.videos().list(part="snippet", id=video_id)
-                response = request.execute()
-                if response.get("items"):
-                    snippet = response["items"][0]["snippet"]
-                    extracted_text = f"Title: {snippet['title']}\nDescription: {snippet['description']}"
-            except Exception as e:
-                logger.error(f"Error getting YouTube metadata: {e}")
+            if youtube:
+                try:
+                    request = youtube.videos().list(part="snippet", id=video_id)
+                    response = request.execute()
+                    if response.get("items"):
+                        snippet = response["items"][0]["snippet"]
+                        extracted_text = f"Title: {snippet['title']}\nDescription: {snippet['description']}"
+                        logger.info(f"✓ Retrieved YouTube metadata for video: {video_id}")
+                    else:
+                        logger.warning(f"No metadata items found in YouTube API response for video: {video_id}")
+                except Exception as e:
+                    logger.error(f"Error getting YouTube metadata: {e}", exc_info=True)
+            else:
+                logger.warning(f"No YouTube API key configured - cannot fetch metadata for video: {video_id}")
         
+        if not extracted_text:
+            logger.error(f"Failed to extract any content from YouTube video: {video_id}")
+            return None, None
+        
+        logger.info(f"✓ Successfully extracted content from YouTube video: {video_id}")
         return extracted_text, transcript_data
         
     except Exception as e:
-        logger.error(f"YouTube processing error: {str(e)}")
+        logger.error(f"YouTube processing error: {str(e)}", exc_info=True)
         return None, None
 
 def generate_gemini_response(prompt):
@@ -720,7 +749,14 @@ def upload_file_or_url():
                 extracted_text, transcript_data = extract_text_from_youtube(youtube_url)
                 
                 if not extracted_text:
-                    return jsonify({"error": "Failed to extract content from YouTube video."}), 400
+                    video_id = extract_video_id(youtube_url)
+                    error_msg = f"Failed to extract content from YouTube video. "
+                    if video_id:
+                        error_msg += f"The video (ID: {video_id}) may not have captions/transcripts available, or the video may be private/restricted."
+                    else:
+                        error_msg += "Invalid YouTube URL format."
+                    logger.error(error_msg)
+                    return jsonify({"error": error_msg}), 400
                 
                 video_id = extract_video_id(youtube_url)
                 

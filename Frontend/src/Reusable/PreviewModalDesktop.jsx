@@ -27,17 +27,15 @@ const PreviewModalDesktop = ({
     }
     
     return (
-      <div 
-        className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-md lg:bottom-4"
-        style={{ 
-          bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
-        }}
+      <div
+        className="fixed left-1/2 -translate-x-1/2 z-40 px-2"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)' }}
       >
-        <div className="glass rounded-xl px-3 py-2.5 flex items-center justify-center gap-2 text-sm text-[--text-primary] border border-[--border-color]">
-          <span className="animate-spin">
-            <IconLoading className="w-4 h-4" />
+        <div className="glass rounded-lg px-2.5 py-1.5 flex items-center gap-2 max-w-[200px] text-[--text-primary] border border-[--border-color]">
+          <span className="animate-spin flex-shrink-0">
+            <IconLoading className="w-3.5 h-3.5" />
           </span>
-          <span className="text-xs sm:text-sm">Uploading your files… You can keep exploring the page while this finishes.</span>
+          <span className="text-xs truncate">Uploading…</span>
         </div>
       </div>
     );

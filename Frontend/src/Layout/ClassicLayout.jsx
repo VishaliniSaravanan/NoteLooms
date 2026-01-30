@@ -16,18 +16,15 @@ const PreviewModalDesktop = lazy(() =>
   import("../Reusable/PreviewModalDesktop")
 );
 const FloatingChatButton = ({ isChatbotVisible, setIsChatbotVisible }) => (
-  <AnimatePresence>
-    <motion.button
-      onClick={() => setIsChatbotVisible(!isChatbotVisible)}
-      className="fixed w-14 h-14 rounded-full glass-button flex items-center justify-center shadow-lg z-50 right-4"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)', right: '1rem' }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      title="Chat with AI"
-    >
-      <IconChat className="w-6 h-6" />
-    </motion.button>
-  </AnimatePresence>
+  <button
+    type="button"
+    onClick={() => setIsChatbotVisible(!isChatbotVisible)}
+    className="fixed w-14 h-14 rounded-full glass-button flex items-center justify-center shadow-lg z-50 right-4 active:scale-95 transition-transform duration-150"
+    style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)', right: '1rem' }}
+    title="Chat with AI"
+  >
+    <IconChat className="w-6 h-6" />
+  </button>
 );
 
 const ClassicLayout = (props) => {
@@ -79,7 +76,7 @@ const ClassicLayout = (props) => {
   } = props;
 
   return (
-    <div className="relative min-h-screen bg-[--bg-primary]">
+    <div className="relative min-h-screen bg-transparent">
       <input
         type="file"
         ref={addMoreFilesInputRef}
@@ -102,10 +99,10 @@ const ClassicLayout = (props) => {
           <Suspense fallback={null}>
             <motion.div
               className="fixed bottom-24 left-4 right-4 lg:right-6 lg:left-auto w-auto lg:w-96 max-w-[calc(100vw-2rem)] lg:max-w-[calc(100vw-3rem)] z-40"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
               <Chatbot 
                 content={currentContent} 
@@ -121,11 +118,7 @@ const ClassicLayout = (props) => {
         setIsChatbotVisible={setIsChatbotVisible}
       />
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div>
         {/* Header */}
         <header className={`glass shadow-xl py-3 sm:py-4`}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -180,13 +173,12 @@ const ClassicLayout = (props) => {
         <main className="max-w-6xl mx-auto px-6 py-8 pb-24 lg:pb-8">
           {/* Mobile Hamburger Menu */}
           <div className="fixed left-4 z-50 lg:hidden" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)' }}>
-            <motion.button
+            <button
+              type="button"
               onClick={() =>
                 setMobileTab(mobileTab === "menu" ? "chat" : "menu")
               }
-              className="w-14 h-14 rounded-full glass-button flex items-center justify-center shadow-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="w-14 h-14 rounded-full glass-button flex items-center justify-center shadow-lg active:scale-95 transition-transform duration-150"
             >
               {mobileTab === "menu" ? (
                 <svg
@@ -217,7 +209,7 @@ const ClassicLayout = (props) => {
                   />
                 </svg>
               )}
-            </motion.button>
+            </button>
           </div>
 
           <MobileMenu 
@@ -282,7 +274,7 @@ const ClassicLayout = (props) => {
             handleCancel={handleCancel}
           />
         </main>
-      </motion.div>
+      </div>
     </div>
   );
 };

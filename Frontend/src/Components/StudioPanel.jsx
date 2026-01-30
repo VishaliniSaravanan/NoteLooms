@@ -84,7 +84,7 @@ export default function StudioPanel({
       setMode(newMode);
       toast.success(`Switched to ${newMode} mode`);
     } else {
-      console.warn('setMode function not provided');
+      if (import.meta.env.DEV) console.warn('setMode function not provided');
       toast.error('Mode switching not available');
     }
   };
@@ -179,8 +179,8 @@ export default function StudioPanel({
       case 'flashcards':
         const flashcardData = data.flashcards || currentContent?.flashcards || [];
         return (
-          <div className="space-y-4">
-            <div className="-mx-2 sm:mx-0">
+          <div className="space-y-4 flex flex-col items-center w-full">
+            <div className="w-full flex justify-center -mx-2 sm:mx-0">
               <FlashcardCarousel 
                 flashcards={flashcardData} 
                 onReset={() => {}}

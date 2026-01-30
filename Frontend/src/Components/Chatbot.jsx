@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { endpoint } from "../utils/api";
@@ -8,9 +8,7 @@ import { IconClose } from '../utils/icons';
 
 const renderWithLatex = (text) => {
   if (!text) return null;
-
   const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/s);
-
   return parts.map((part, i) => {
     if (part.startsWith('$$') && part.endsWith('$$')) {
       const content = part.slice(2, -2).trim();
@@ -22,6 +20,12 @@ const renderWithLatex = (text) => {
     return <span key={i}>{part}</span>;
   });
 };
+
+const MemoizedMessageContent = memo(({ text }) => {
+  const content = useMemo(() => renderWithLatex(text), [text]);
+  return <div className="text-base leading-relaxed whitespace-pre-wrap">{content}</div>;
+});
+MemoizedMessageContent.displayName = 'MemoizedMessageContent';
 
 function Chatbot({ content, onClose }) {
   const STORAGE_KEY = 'studyAssistantChat';
@@ -54,7 +58,7 @@ function Chatbot({ content, onClose }) {
           return parsed;
         }
       } catch (e) {
-        console.error('Error parsing saved messages:', e);
+        if (import.meta.env.DEV) console.error('Error parsing saved messages:', e);
       }
     }
     return [initialGreeting];
@@ -75,12 +79,20 @@ function Chatbot({ content, onClose }) {
     'Activities': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥅', '🏒', '🏑', '🏏', '⛳', '🏹', '🎣', '🥊', '🥋', '🎽']
   };
 
+  const saveTimeoutRef = useRef(null);
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      saveTimeoutRef.current = null;
+    }, 600);
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
   }, [messages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages]);
 
   // Close emoji picker when clicking outside
@@ -163,9 +175,10 @@ function Chatbot({ content, onClose }) {
   return (
     <motion.div
       className="chatbot-container rounded-2xl shadow-xl overflow-hidden bg-[--card-bg] border-[--border-color] border max-h-[70vh] flex flex-col w-full relative z-10"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       style={{ minHeight: '300px' }}
     >
       <div
@@ -178,15 +191,14 @@ function Chatbot({ content, onClose }) {
           Study Assistant
         </h3>
         {onClose && (
-          <motion.button
+          <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[--hover-bg] text-[--text-secondary] hover:text-[--text-primary] transition-all duration-200"
+            className="p-2 rounded-lg hover:bg-[--hover-bg] text-[--text-secondary] hover:text-[--text-primary] transition-colors duration-200 active:scale-95"
             disabled={isLoading}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
           >
             <IconClose className="w-5 h-5" />
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -200,9 +212,7 @@ function Chatbot({ content, onClose }) {
                   : "bg-gray-700 text-white"
               }`}
             >
-              <div className="text-base leading-relaxed whitespace-pre-wrap">
-                {renderWithLatex(msg.text)}
-              </div>
+              <MemoizedMessageContent text={msg.text} />
             </div>
           </div>
         ))}
@@ -227,10 +237,10 @@ function Chatbot({ content, onClose }) {
           {showEmojiPicker && (
             <motion.div
               ref={emojiPickerRef}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="absolute bottom-full left-0 mb-2 w-80 sm:w-96 bg-[--card-bg] border border-[--border-color] rounded-xl shadow-2xl z-[60] max-h-96 overflow-hidden flex flex-col"
             >
               <div className="p-3 border-b border-[--border-color] bg-[--bg-secondary] flex items-center justify-between">
@@ -266,18 +276,17 @@ function Chatbot({ content, onClose }) {
             </motion.div>
           )}
         </AnimatePresence>
-        <motion.button
+        <button
+          type="button"
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="p-2 rounded-lg hover:bg-[--hover-bg] text-[--text-secondary] hover:text-[--text-primary] transition-all duration-200 flex-shrink-0 z-10"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          className="p-2 rounded-lg hover:bg-[--hover-bg] text-[--text-secondary] hover:text-[--text-primary] transition-colors duration-200 flex-shrink-0 z-10 active:scale-95"
           disabled={isLoading}
           aria-label="Open emoji picker"
         >
           <svg className="w-5 h-5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-        </motion.button>
+        </button>
         <input
           type="text"
           value={userInput}
@@ -287,16 +296,15 @@ function Chatbot({ content, onClose }) {
           className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border outline-none bg-[--bg-primary] border-[--border-color] text-[--text-primary] placeholder:text-[--text-tertiary] focus:ring-2 focus:ring-[--accent-primary] focus:border-[--accent-primary] transition-all duration-200 text-sm sm:text-base"
           disabled={isLoading}
         />
-        <motion.button
+        <button
+          type="button"
           onClick={handleSendMessage}
           disabled={isLoading || !userInput.trim()}
-          className={`px-4 py-2 lg:px-5 lg:py-2.5 rounded-lg font-medium flex items-center gap-1 lg:gap-2 transition-all duration-200 text-sm lg:text-base ${
+          className={`px-4 py-2 lg:px-5 lg:py-2.5 rounded-lg font-medium flex items-center gap-1 lg:gap-2 transition-colors duration-200 text-sm lg:text-base active:scale-[0.98] ${
             isLoading || !userInput.trim()
               ? "bg-gray-600 cursor-not-allowed text-gray-400"
               : "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
           }`}
-          whileHover={!isLoading && userInput.trim() ? { scale: 1.05 } : {}}
-          whileTap={!isLoading && userInput.trim() ? { scale: 0.95 } : {}}
         >
           {isLoading ? (
             <>
@@ -314,7 +322,7 @@ function Chatbot({ content, onClose }) {
               <span className="hidden sm:inline">Send</span>
             </>
           )}
-        </motion.button>
+        </button>
       </div>
     </motion.div>
   );

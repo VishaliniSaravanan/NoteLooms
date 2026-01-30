@@ -60,13 +60,11 @@ const useFileHandling = ({
   };
 
   const handleFileUpload = async () => {
-    console.log("handleFileUpload called, previewFiles:", previewFiles);
     if (previewFiles.length === 0) {
-      console.log("No preview files to upload");
       toast.error("No files to upload. Please select files first.");
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -76,11 +74,9 @@ const useFileHandling = ({
     previewFiles.forEach((previewFile) => {
       if (previewFile.type === "youtube") {
         formData.append("youtube_url", previewFile.url);
-        console.log("Added YouTube URL:", previewFile.url);
       } else if (previewFile.file) {
         formData.append(`files`, previewFile.file);
         hasFiles = true;
-        console.log("Added file:", previewFile.name, previewFile.file);
       }
     });
 
@@ -89,17 +85,15 @@ const useFileHandling = ({
       setError(errorMsg);
       setIsLoading(false);
       toast.error(errorMsg, { id: "upload" });
-      console.error(errorMsg);
+      if (import.meta.env.DEV) console.error(errorMsg);
       return;
     }
 
     formData.append("quick_mode", "false");
     try {
-      console.log("Sending upload request to:", endpoint("/upload"));
       const response = await axios.post(endpoint("/upload"), formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      console.log("Upload response received:", response.data);
       processResponse(response.data, previewFiles);
       const currentFiles = [...previewFiles];
       currentFiles.forEach((file) => {

@@ -9,32 +9,32 @@ const ConfirmationModal = ({ showConfirmModal, confirmMessage, handleConfirm, ha
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
           <motion.div
             className="glass rounded-2xl p-8 max-w-md w-full shadow-2xl backdrop-blur-xl border border-[--border-color]/50"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
             <h3 className="text-xl font-semibold mb-4 text-[--text-primary] text-center">Confirm Action</h3>
             <p className="text-[--text-secondary] mb-6 text-center leading-relaxed">{confirmMessage}</p>
             <div className="flex justify-center gap-4">
-              <motion.button
+              <button
+                type="button"
                 onClick={handleCancel}
-                className="px-6 py-2 rounded-lg font-medium text-[--text-primary] bg-[--hover-bg] hover:bg-blue-500/10 transition-all duration-200 border border-[--border-color]"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2 rounded-lg font-medium text-[--text-primary] bg-[--hover-bg] hover:bg-blue-500/10 transition-colors duration-200 border border-[--border-color] active:scale-[0.98]"
               >
                 Cancel
-              </motion.button>
-              <motion.button
+              </button>
+              <button
+                type="button"
                 onClick={handleConfirm}
-                className="px-6 py-2 rounded-lg font-medium text-white glass-button transition-all duration-200 shadow-md hover:shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2 rounded-lg font-medium text-white glass-button transition-colors duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
               >
                 Confirm
-              </motion.button>
+              </button>
             </div>
           </motion.div>
         </motion.div>

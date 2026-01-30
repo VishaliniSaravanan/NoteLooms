@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect, Suspense, lazy } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect, useMemo, Suspense, lazy } from "react";
 import toast, { Toaster } from 'react-hot-toast';
 import axios from "axios";
 import { endpoint } from "./utils/api";
-import { IconFolder, IconChat, IconTools } from "./utils/icons";
 import useAppState from "./hooks/useAppState";
 import useFileHandling from "./hooks/useFileHandling";
+import bgImage from "./utils/Background.jpg";
 
 // Lazy-load the large layout shells so the initial classic view stays fast
 const StudioLayout = lazy(() => import("./Layout/StudioLayout"));
@@ -301,10 +300,8 @@ function App() {
         chatHistory: chatHistory
       };
 
-      console.log("Saving session:", sessionData);
       const response = await axios.post(endpoint('/api/sessions'), sessionData);
-      console.log("Session save response:", response.data);
-      
+
       if (response.data.session_id) {
         setCurrentSessionId(response.data.session_id);
         toast.success("Session saved successfully!");
@@ -314,8 +311,10 @@ function App() {
         throw new Error("No session_id in response");
       }
     } catch (error) {
-      console.error("Error saving session:", error);
-      console.error("Error details:", error.response?.data);
+      if (import.meta.env.DEV) {
+        console.error("Error saving session:", error);
+        console.error("Error details:", error.response?.data);
+      }
       toast.error(`Failed to save session: ${error.response?.data?.error || error.message}`);
     }
   };
@@ -336,66 +335,114 @@ function App() {
       setCurrentSessionId(sessionData.id);
       toast.success("Session loaded successfully!");
     } catch (error) {
-      console.error("Error loading session:", error);
+      if (import.meta.env.DEV) console.error("Error loading session:", error);
       toast.error("Failed to load session");
     }
   };
 
-  const sharedProps = {
-    uploadedFiles,
-    selectedFileIndex,
-    setSelectedFileIndex,
-    isLoading,
-    error,
-    isSpeaking,
-    activeSection,
-    setActiveSection,
-    isChatbotVisible,
-    setIsChatbotVisible,
-    layoutMode,
-    setLayoutMode,
-    activeOutput,
-    setActiveOutput,
-    currentFlashcardIndex,
-    numFlashcards,
-    setNumFlashcards,
-    numQuestions,
-    setNumQuestions,
-    isGenerating,
-    setIsGenerating,
-    mobileTab,
-    setMobileTab,
-    previewFiles,
-    isPreviewModalOpen,
-    setIsPreviewModalOpen,
-    showConfirmModal,
-    confirmMessage,
-    currentContent,
-    handleFileSelect,
-    handleFileUpload,
-    handleRemovePreviewFile,
-    handleAddMoreFiles,
-    handleUploadedFileClick,
-    handleExport,
-    handleDownload,
-    handleReset,
-    handleConfirm,
-    handleCancel,
-    showConfirmation,
-    speakText,
-    stopSpeaking,
-    updateCurrentContent,
-    addMoreFilesInputRef,
-    isMobile,
-    isSessionHistoryOpen,
-    setIsSessionHistoryOpen,
-    handleSaveSession,
-    handleLoadSession,
-    currentSessionId,
-  };
+  const sharedProps = useMemo(
+    () => ({
+      uploadedFiles,
+      selectedFileIndex,
+      setSelectedFileIndex,
+      isLoading,
+      error,
+      isSpeaking,
+      activeSection,
+      setActiveSection,
+      isChatbotVisible,
+      setIsChatbotVisible,
+      layoutMode,
+      setLayoutMode,
+      activeOutput,
+      setActiveOutput,
+      currentFlashcardIndex,
+      numFlashcards,
+      setNumFlashcards,
+      numQuestions,
+      setNumQuestions,
+      isGenerating,
+      setIsGenerating,
+      mobileTab,
+      setMobileTab,
+      previewFiles,
+      isPreviewModalOpen,
+      setIsPreviewModalOpen,
+      showConfirmModal,
+      confirmMessage,
+      currentContent,
+      handleFileSelect,
+      handleFileUpload,
+      handleRemovePreviewFile,
+      handleAddMoreFiles,
+      handleUploadedFileClick,
+      handleExport,
+      handleDownload,
+      handleReset,
+      handleConfirm,
+      handleCancel,
+      showConfirmation,
+      speakText,
+      stopSpeaking,
+      updateCurrentContent,
+      addMoreFilesInputRef,
+      isMobile,
+      isSessionHistoryOpen,
+      setIsSessionHistoryOpen,
+      handleSaveSession,
+      handleLoadSession,
+      currentSessionId,
+    }),
+    [
+      uploadedFiles,
+      selectedFileIndex,
+      isLoading,
+      error,
+      isSpeaking,
+      activeSection,
+      isChatbotVisible,
+      layoutMode,
+      activeOutput,
+      currentFlashcardIndex,
+      numFlashcards,
+      numQuestions,
+      isGenerating,
+      mobileTab,
+      previewFiles,
+      isPreviewModalOpen,
+      showConfirmModal,
+      confirmMessage,
+      currentContent,
+      currentSessionId,
+      isSessionHistoryOpen,
+      handleFileSelect,
+      handleFileUpload,
+      handleRemovePreviewFile,
+      handleAddMoreFiles,
+      handleUploadedFileClick,
+      handleExport,
+      handleDownload,
+      handleReset,
+      handleConfirm,
+      handleCancel,
+      showConfirmation,
+      speakText,
+      stopSpeaking,
+      updateCurrentContent,
+      handleSaveSession,
+      handleLoadSession,
+    ]
+  );
+
+  const backdropStyle = useMemo(
+    () => ({
+      backgroundImage: `linear-gradient(180deg, rgba(15,20,25,0.82) 0%, rgba(26,31,41,0.78) 50%, rgba(15,20,25,0.86) 100%), url(${bgImage})`,
+    }),
+    []
+  );
 
   return (
-    <>
+    <div className="app-backdrop" style={backdropStyle}>
       {layoutMode === "studio" ? (
         <Suspense
           fallback={
@@ -427,7 +474,7 @@ function App() {
           currentSessionId={currentSessionId}
         />
       </Suspense>
-    </>
+    </div>
   );
 }
 

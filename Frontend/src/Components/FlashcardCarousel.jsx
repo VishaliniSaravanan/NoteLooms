@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import '../Components/FlashcardCarousel.css';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaChevronLeft, FaChevronRight, FaRedo } from 'react-icons/fa';
 
 const FlashcardCarousel = ({ flashcards, onReset, numFlashcards, setNumFlashcards }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const nextCard = () => {
     setCurrentIndex((prev) => (prev + 1) % Math.max(1, flashcards.length));
@@ -30,17 +29,6 @@ const FlashcardCarousel = ({ flashcards, onReset, numFlashcards, setNumFlashcard
   const handleCardFlip = () => {
     setFlipped(!flipped);
   };
-
-  // Close modal on Escape key
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isModalOpen) {
-        setIsModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isModalOpen]);
 
   if (!flashcards || flashcards.length === 0) {
     return (
@@ -108,131 +96,73 @@ const FlashcardCarousel = ({ flashcards, onReset, numFlashcards, setNumFlashcard
           Reset Flashcards
         </button>
       </div>
-      {/* Flashcard Preview Button */}
-      <div className="flex justify-center">
-        <motion.button
-          onClick={() => setIsModalOpen(true)}
-          className="px-6 py-3 rounded-lg font-medium glass-button text-white transition-all duration-200 shadow-sm hover:shadow-md"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Tap to view flash cards
-        </motion.button>
-      </div>
-      
-      <div className="flex justify-center mt-4 text-xs text-[--text-secondary]">
-        {displayedFlashcards.length} {displayedFlashcards.length === 1 ? 'card' : 'cards'} available
-      </div>
 
-      {/* Flashcard Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setIsModalOpen(false)}
+      {/* Inline flashcard: no modal, card visible here */}
+      <div className="flex flex-col items-center w-full max-w-lg mx-auto mt-6">
+        <div
+          className="flashcard perspective-1000 w-full cursor-pointer relative flex-shrink-0 flashcard-fixed-size"
+          style={{ height: 'clamp(200px, 42vh, 320px)' }}
+          onClick={handleCardFlip}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCardFlip();
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label={`Flashcard ${currentIndex + 1} of ${displayedFlashcards.length}. ${flipped ? 'Showing answer' : 'Showing question'}. Click to flip.`}
         >
           <motion.div
-            className="relative w-full max-w-lg mx-auto px-4 sm:px-6"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
+            className="relative w-full h-full preserve-3d"
+            animate={{ rotateY: flipped ? 180 : 0 }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
           >
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute -top-10 right-4 sm:right-6 text-white hover:text-gray-300 transition-colors z-10"
-              aria-label="Close flashcard"
+            <div
+              className="absolute inset-0 w-full h-full backface-hidden flex flex-col flashcard-front rounded-2xl"
+              style={{ transform: 'rotateY(0deg)' }}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="relative flex justify-center">
-              <motion.div
-                key={currentIndex}
-                className="flashcard perspective-1000 w-full max-w-full h-64 sm:h-80 md:h-96 cursor-pointer relative"
-                onClick={handleCardFlip}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleCardFlip();
-                  }
-                }}
-                tabIndex={0}
-                role="button"
-                aria-label={`Flashcard ${currentIndex + 1} of ${displayedFlashcards.length}. ${flipped ? 'Showing answer' : 'Showing question'}`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <motion.div
-                  className="relative w-full h-full preserve-3d"
-                  animate={{ rotateY: flipped ? 180 : 0 }}
-                  transition={{ duration: 0.6, ease: "easeInOut" }}
-                >
-                  <div
-                    className="absolute w-full h-full backface-hidden flex flex-col justify-center items-center p-4 sm:p-6 flashcard-front"
-                    style={{ transform: 'rotateY(0deg)' }}
-                  >
-                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-[--text-primary] text-center w-full break-words relative overflow-hidden" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', hyphens: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '0.5rem' }}>
-                      <span className="w-full px-2">{currentFlashcard.front}</span>
-                      <div className="absolute bottom-2 right-2 text-xs text-[--text-secondary] opacity-70 pointer-events-none">
-                        Tap to flip
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="absolute w-full h-full backface-hidden flex flex-col justify-center items-center p-4 sm:p-6 flashcard-back"
-                    style={{ transform: 'rotateY(180deg)' }}
-                  >
-                    <div className="text-sm sm:text-base md:text-lg lg:text-xl font-medium text-[--text-secondary] w-full break-words relative overflow-hidden" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', hyphens: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '0.5rem' }}>
-                      <span className="w-full px-2">{currentFlashcard.back}</span>
-                      <div className="absolute bottom-2 right-2 text-xs text-[--text-secondary] opacity-70 pointer-events-none">
-                        Tap to flip back
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
-            
-            {/* Navigation arrows at the bottom */}
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  prevCard();
-                }}
-                disabled={displayedFlashcards.length <= 1}
-                aria-label="Previous flashcard"
-                className="text-white hover:text-gray-300 transition-colors disabled:opacity-30 flex items-center justify-center"
-              >
-                <FaChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
-              </button>
-              
-              <div className="text-sm text-white">
-                Card {currentIndex + 1} of {displayedFlashcards.length}
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center items-center p-4 text-center">
+                <span className="text-base sm:text-lg font-medium text-[--text-primary] break-words w-full px-2">{currentFlashcard.front}</span>
+                <span className="text-xs text-[--text-secondary] opacity-70 mt-2 block">Click to flip</span>
               </div>
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nextCard();
-                }}
-                disabled={displayedFlashcards.length <= 1}
-                aria-label="Next flashcard"
-                className="text-white hover:text-gray-300 transition-colors disabled:opacity-30 flex items-center justify-center"
-              >
-                <FaChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
-              </button>
+            </div>
+            <div
+              className="absolute inset-0 w-full h-full backface-hidden flex flex-col flashcard-back rounded-2xl"
+              style={{ transform: 'rotateY(180deg)' }}
+            >
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center items-center p-4 text-center">
+                <span className="text-sm sm:text-base font-medium text-[--text-secondary] break-words w-full px-2">{currentFlashcard.back}</span>
+                <span className="text-xs text-[--text-secondary] opacity-70 mt-2 block">Click to flip back</span>
+              </div>
             </div>
           </motion.div>
-        </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+
+        <div className="flex items-center justify-center gap-4 mt-4 w-full">
+          <button
+            type="button"
+            onClick={prevCard}
+            disabled={displayedFlashcards.length <= 1}
+            aria-label="Previous flashcard"
+            className="p-2 rounded-lg bg-[--hover-bg] text-[--text-primary] disabled:opacity-30 hover:bg-[--border-color] transition-colors"
+          >
+            <FaChevronLeft className="w-5 h-5" />
+          </button>
+          <span className="text-sm text-[--text-secondary]">
+            Card {currentIndex + 1} of {displayedFlashcards.length}
+          </span>
+          <button
+            type="button"
+            onClick={nextCard}
+            disabled={displayedFlashcards.length <= 1}
+            aria-label="Next flashcard"
+            className="p-2 rounded-lg bg-[--hover-bg] text-[--text-primary] disabled:opacity-30 hover:bg-[--border-color] transition-colors"
+          >
+            <FaChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

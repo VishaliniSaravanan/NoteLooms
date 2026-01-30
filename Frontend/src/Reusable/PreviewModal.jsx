@@ -10,13 +10,15 @@ const PreviewModal = ({ isOpen, onClose, previewFiles, handleRemovePreviewFile, 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={onClose}
         >
           <motion.div
             className="w-full max-w-md h-[90vh] bg-[--bg-primary] rounded-2xl overflow-y-auto p-4 relative"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -66,23 +68,21 @@ const PreviewModal = ({ isOpen, onClose, previewFiles, handleRemovePreviewFile, 
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex gap-2 p-2 bg-[--bg-secondary] rounded-lg">  
-              <motion.button
+            <div className="mt-4 flex gap-2 p-2 bg-[--bg-secondary] rounded-lg">
+              <button
+                type="button"
                 onClick={handleAddMoreFiles}
-                className="flex-1 px-3 py-1.5 rounded text-xs font-semibold bg-[#0b1e70] text-white transition-colors duration-200 hover:bg-white hover:text-black active:bg-white active:text-black focus:bg-white focus:text-black"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="flex-1 px-3 py-1.5 rounded text-xs font-semibold bg-[#0b1e70] text-white transition-colors duration-200 hover:bg-white hover:text-black active:scale-[0.98]"
               >
                 Add More
-              </motion.button>
-              <motion.button
+              </button>
+              <button
+                type="button"
                 onClick={async () => {
                   await handleFileUpload();
                   onClose();
                 }}
-                className="flex-1 px-3 py-1.5 rounded text-xs bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="flex-1 px-3 py-1.5 rounded text-xs bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -91,7 +91,7 @@ const PreviewModal = ({ isOpen, onClose, previewFiles, handleRemovePreviewFile, 
                     <span>Uploading...</span>
                   </>
                 ) : 'Upload All'}
-              </motion.button>
+              </button>
             </div>
             {isLoading ? (
               <div className="text-xs text-blue-500 text-center mt-2 flex items-center justify-center gap-2">

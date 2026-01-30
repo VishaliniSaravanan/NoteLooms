@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo, useEffect, useRef } from "react";
 import axios from "axios";
 import { endpoint } from "../utils/api";
 
@@ -14,6 +13,10 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
   const [testScore, setTestScore] = useState(0);
   const [timerMinutes, setTimerMinutes] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const intervalRef = useRef(null);
+  const testAnswersRef = useRef([]);
+  const testMcqsRef = useRef([]);
+  const hasTimerRef = useRef(false);
 
   const normalizedMcqs = useMemo(() => {
     if (!currentContent?.mcqs || !Array.isArray(currentContent.mcqs)) return [];
@@ -32,12 +35,16 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
           correctLetter = String.fromCharCode(65 + ansIndex);
         }
       }
+      const correctIdx = correctLetter ? correctLetter.charCodeAt(0) - 65 : 0;
+      const correctText = optionTexts[correctIdx];
+      const explanation = (mcq.explanation || "").trim() || (correctText ? `The correct answer is ${correctText}.` : "");
 
       return {
         id: mcq.id || idx + 1,
         question: mcq.question || "",
         options: optionTexts,
         correctLetter,
+        explanation,
       };
     });
   }, [currentContent?.mcqs]);
@@ -52,6 +59,9 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
     if (!normalizedMcqs || normalizedMcqs.length === 0) return [];
     return normalizedMcqs.slice(0, effectiveNumQuestions);
   }, [normalizedMcqs, effectiveNumQuestions]);
+
+  testAnswersRef.current = testAnswers;
+  testMcqsRef.current = testMcqs;
 
   const handleGenerateMCQs = async () => {
     if (!currentContent?.raw_text || isGenerating) return;
@@ -76,7 +86,7 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
         setGenerationError("No MCQs could be generated for this content.");
       }
     } catch (error) {
-      console.error("MCQ generation error:", error);
+      if (import.meta.env.DEV) console.error("MCQ generation error:", error);
       setGenerationError(
         error.response?.data?.error ||
         "Failed to generate MCQs. Please try again later."
@@ -98,12 +108,13 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
 
   const startTest = () => {
     if (!testMcqs.length) return;
+    hasTimerRef.current = timerMinutes > 0;
     setIsTestActive(true);
     setTestFinished(false);
     setCurrentIndex(0);
     setTestAnswers(Array(testMcqs.length).fill(null));
     setTestScore(0);
-    setTimeLeft(timerMinutes > 0 ? timerMinutes * 60 : 0);
+    setTimeLeft(timerMinutes > 0 ? timerMinutes * 60 : -1);
   };
 
   const handleOptionSelect = (letter) => {
@@ -173,23 +184,32 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
     };
   }, [isTestActive]);
 
-  // Timer effect
+  // When time hits 0, finish test using refs for latest answers
   useEffect(() => {
-    if (!isTestActive || testFinished || timeLeft <= 0) return;
+    if (!isTestActive || testFinished || timeLeft !== 0) return;
+    const mcqs = testMcqsRef.current;
+    const answers = testAnswersRef.current;
+    let correct = 0;
+    mcqs.forEach((q, idx) => {
+      if (q.correctLetter && answers[idx] === q.correctLetter) correct += 1;
+    });
+    setTestScore(correct);
+    setTestFinished(true);
+  }, [isTestActive, testFinished, timeLeft]);
 
-    const id = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(id);
-          finishTest();
-          return 0;
-        }
-        return prev - 1;
-      });
+  // Timer: only run when test has a timer (no timer = don't start interval, so no auto 0/10)
+  useEffect(() => {
+    if (!isTestActive || testFinished || !hasTimerRef.current) return;
+
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => (prev <= 0 ? prev : (prev <= 1 ? 0 : prev - 1)));
     }, 1000);
 
-    return () => clearInterval(id);
-  }, [isTestActive, testFinished, timeLeft, testMcqs, testAnswers]);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+  }, [isTestActive, testFinished]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60)
@@ -334,134 +354,131 @@ export default function MCQs({ currentContent, onUpdate, numQuestions = 10, setN
 
       {isTestActive && (
         <div
-          className="fixed inset-0 z-[9999] bg-[#050816] text-white flex flex-col overflow-hidden"
+          className="fixed inset-0 z-[9999] bg-[#050816] text-white flex flex-col overflow-hidden question-area"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)',
-            backgroundColor: '#050816'
           }}
           onClick={exitTest}
         >
-          <div className="flex-1 flex flex-col w-full">
-            {/* Full-width Top bar - NO padding on sides */}
-            <div className="w-full bg-white/5 border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4">
-              <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-                <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
-                  <h2 className="text-lg sm:text-xl font-semibold">MCQ Focus Test</h2>
-                  {!testFinished && (
-                    <p className="text-xs sm:text-sm text-white/70">
-                      Stay on this screen — clicking outside will end the practice attempt.
-                    </p>
-                  )}
-                </div>
-                {!testFinished && (
-                  <div className="flex flex-col items-end gap-1 text-xs sm:text-sm text-white/80" onClick={(e) => e.stopPropagation()}>
-                    <span className="font-semibold">
-                      Qn {currentIndex + 1} / {testMcqs.length}
-                    </span>
-                    {timerMinutes > 0 && (
-                      <span className="font-mono px-2 py-1 rounded bg-blue-600/30 border border-blue-400/50">
-                        ⏱ {formatTime(timeLeft)}
-                      </span>
-                    )}
-                  </div>
+          {/* Single top bar */}
+          <div className="w-full flex-shrink-0 bg-white/5 border-b border-white/10 px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold">MCQ Test</h2>
+            {!testFinished && (
+              <div className="flex items-center gap-3 text-sm text-white/80">
+                <span>Q{currentIndex + 1}/{testMcqs.length}</span>
+                {timerMinutes > 0 && (
+                  <span className="font-mono px-2 py-0.5 rounded bg-blue-600/30 border border-blue-400/50">
+                    ⏱ {formatTime(timeLeft)}
+                  </span>
                 )}
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Content area with max-width container */}
-            <div 
-              className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-6 pb-8 sm:pb-12 question-area overflow-y-auto" 
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="max-w-5xl w-full mx-auto flex flex-col gap-4 flex-1 min-h-0">
-                {/* Progress bar */}
-                {!testFinished && (
-                  <div className="w-full bg-white/10 rounded-full h-2 flex-shrink-0">
+          {/* Single scrollable content area — no inner card */}
+          <div
+            className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 min-h-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="max-w-2xl mx-auto">
+              {!testFinished ? (
+                <>
+                  <div className="w-full bg-white/10 rounded-full h-1.5 mb-6">
                     <div
-                      className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-                      style={{
-                        width: `${((currentIndex + 1) / testMcqs.length) * 100}%`,
-                      }}
+                      className="h-1.5 rounded-full bg-blue-500 transition-all duration-300"
+                      style={{ width: `${((currentIndex + 1) / testMcqs.length) * 100}%` }}
                     />
                   </div>
-                )}
-
-                {/* Question content */}
-                <div className="flex-1 flex flex-col bg-white/5 border border-white/10 rounded-2xl shadow-2xl px-4 sm:px-6 py-6 sm:py-8 backdrop-blur min-h-0">
-                  {!testFinished ? (
-                    <>
-                      <div className="mb-6 sm:mb-8 flex-shrink-0">
-                        <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-4">
-                          {currentIndex + 1}. {testMcqs[currentIndex]?.question}
-                        </h3>
-                        <div className="space-y-3 sm:space-y-4">
-                          {testMcqs[currentIndex]?.options.map((option, idx) => {
-                            const letter = String.fromCharCode(65 + idx);
-                            const isSelected = testAnswers[currentIndex] === letter;
-                            return (
-                              <button
-                                key={idx}
-                                onClick={() => handleOptionSelect(letter)}
-                                className={`w-full text-left py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border transition-all duration-200 text-sm sm:text-base ${
-                                  isSelected
-                                    ? "bg-blue-600/80 border-blue-300 text-white shadow-lg"
-                                    : "bg-white/5 border-white/15 text-white/80 hover:bg-white/10 hover:border-blue-300/70"
-                                }`}
-                              >
-                                <span className="font-semibold mr-2">{letter})</span>
-                                {option}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="mt-auto flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 pb-2 border-t border-white/10 flex-shrink-0">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-4">
+                    {currentIndex + 1}. {testMcqs[currentIndex]?.question}
+                  </h3>
+                  <div className="space-y-2 mb-4">
+                    {testMcqs[currentIndex]?.options.map((option, idx) => {
+                      const letter = String.fromCharCode(65 + idx);
+                      const q = testMcqs[currentIndex];
+                      const isSelected = testAnswers[currentIndex] === letter;
+                      const isCorrectOption = q?.correctLetter === letter;
+                      const hasAnswered = testAnswers[currentIndex] != null;
+                      const showCorrectWrong = hasAnswered && (isSelected || isCorrectOption);
+                      const isUserCorrect = hasAnswered && isSelected && isCorrectOption;
+                      const isUserWrong = hasAnswered && isSelected && !isCorrectOption;
+                      const isRevealedCorrect = hasAnswered && !isSelected && isCorrectOption;
+                      const optionStyle = !showCorrectWrong
+                        ? "bg-white/5 border-white/15 text-white/80 hover:bg-white/10"
+                        : isUserCorrect
+                        ? "bg-green-600/80 border-green-400 text-white"
+                        : isUserWrong
+                        ? "bg-red-600/80 border-red-400 text-white"
+                        : isRevealedCorrect
+                        ? "bg-green-600/50 border-green-400/70 text-white"
+                        : "bg-white/5 border-white/15 text-white/60";
+                      return (
                         <button
-                          onClick={exitTest}
-                          className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-red-500/20 hover:text-red-200 transition-colors text-xs sm:text-sm"
+                          key={idx}
+                          onClick={() => !hasAnswered && handleOptionSelect(letter)}
+                          disabled={hasAnswered}
+                          className={`w-full text-left py-2.5 px-3 rounded-lg border text-sm transition-colors ${optionStyle}`}
                         >
-                          Exit Test
+                          <span className="font-semibold mr-2">{letter})</span>
+                          {option}
+                          {hasAnswered && isCorrectOption && (
+                            <span className="ml-2 text-xs opacity-90">✓ Correct</span>
+                          )}
+                          {hasAnswered && isSelected && !isCorrectOption && (
+                            <span className="ml-2 text-xs opacity-90">✗ Wrong</span>
+                          )}
                         </button>
-                        <button
-                          onClick={handleNextOrSubmit}
-                          disabled={testAnswers[currentIndex] == null}
-                          className={`px-6 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base ${
-                            testAnswers[currentIndex] == null ? "opacity-60 cursor-not-allowed" : ""
-                          }`}
-                        >
-                          {currentIndex === testMcqs.length - 1 ? "Submit Test" : "Next Question"}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-                      <h3 className="text-3xl sm:text-4xl font-bold text-[--accent-primary] mb-4">
-                        Test Complete
-                      </h3>
-                      <p className="text-5xl sm:text-6xl font-extrabold text-green-400 mb-3">
-                        {testScore} / {testMcqs.length}
-                      </p>
-                      <p className="text-base sm:text-lg text-white/80 mb-6 max-w-xl">
-                        {testScore >= testMcqs.length * 0.9
-                          ? "🌟 Outstanding performance! You really know this content."
-                          : testScore >= testMcqs.length * 0.7
-                          ? "🎯 Great job! A little more practice and you'll master it."
-                          : testScore >= testMcqs.length * 0.5
-                          ? "💪 Good effort — review the weaker areas and try again."
-                          : "📚 Keep practicing. Revisit the notes and take another test when you're ready."}
-                      </p>
-                      <button
-                        onClick={exitTest}
-                        className="px-6 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all duration-200"
-                      >
-                        Exit
-                      </button>
+                      );
+                    })}
+                  </div>
+                  {testAnswers[currentIndex] != null && testMcqs[currentIndex]?.explanation && (
+                    <div className="mb-6 p-3 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80">
+                      <span className="font-medium text-white/90">Explanation: </span>
+                      {testMcqs[currentIndex].explanation}
                     </div>
                   )}
+                  <div className="flex items-center justify-between gap-3 pt-4 border-t border-white/10">
+                    <button
+                      onClick={exitTest}
+                      className="px-4 py-2 rounded-lg text-white/80 hover:bg-red-500/20 hover:text-red-200 text-sm"
+                    >
+                      Exit
+                    </button>
+                    <button
+                      onClick={handleNextOrSubmit}
+                      disabled={testAnswers[currentIndex] == null}
+                      className={`px-5 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 text-sm ${
+                        testAnswers[currentIndex] == null ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {currentIndex === testMcqs.length - 1 ? "Submit" : "Next"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="py-8 text-center">
+                  <h3 className="text-2xl font-bold text-[--accent-primary] mb-2">Done</h3>
+                  <p className="text-4xl font-bold text-green-400 mb-4">
+                    {testScore} / {testMcqs.length}
+                  </p>
+                  <p className="text-sm text-white/70 mb-6 max-w-md mx-auto">
+                    {testScore >= testMcqs.length * 0.9
+                      ? "Outstanding!"
+                      : testScore >= testMcqs.length * 0.7
+                      ? "Great job."
+                      : testScore >= testMcqs.length * 0.5
+                      ? "Good effort — review and try again."
+                      : "Keep practicing."}
+                  </p>
+                  <button
+                    onClick={exitTest}
+                    className="px-5 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Exit
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

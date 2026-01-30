@@ -80,13 +80,9 @@ function FileUploader({ onFileUpload }) {
           id="file-upload"
         />
         <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center space-y-3">
-          <motion.div
-            className="text-4xl"
-            animate={{ y: [0, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
+          <div className="text-4xl">
             📁
-          </motion.div>
+          </div>
           <div>
             <p className="font-medium">Drag & drop or click to upload</p>
             <p className="text-sm text-[--text-secondary] mt-1">Supports PDF, PNG, JPG, JPEG</p>

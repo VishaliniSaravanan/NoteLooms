@@ -12,6 +12,13 @@ const Homepage = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const isMobileOrSmall = typeof window !== 'undefined' && window.innerWidth < 1024;
+    if (isMobileOrSmall) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      return;
+    }
+
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -19,7 +26,6 @@ const Homepage = () => {
     const mouse = { x: 0, y: 0 };
     let animationId;
 
-    // Particle class
     class Particle {
       constructor(x, y) {
         this.x = x;
@@ -30,7 +36,7 @@ const Homepage = () => {
         this.speedX = (Math.random() - 0.5) * 0.5;
         this.speedY = (Math.random() - 0.5) * 0.5;
         this.opacity = Math.random() * 0.5 + 0.2;
-        this.color = `rgba(139, 92, 246, ${this.opacity})`; // Blue-purple accent
+        this.color = `rgba(139, 92, 246, ${this.opacity})`;
       }
 
       draw() {
@@ -53,12 +59,9 @@ const Homepage = () => {
 
         this.x += Math.cos(angle) * force * 2;
         this.y += Math.sin(angle) * force * 2;
-
-        // Return to base position slowly
         this.x += (this.baseX - this.x) * 0.02;
         this.y += (this.baseY - this.y) * 0.02;
 
-        // Bounce off edges
         if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
         if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
 
@@ -67,7 +70,6 @@ const Homepage = () => {
       }
     }
 
-    // Initialize particles
     const initParticles = () => {
       particlesRef.current = [];
       for (let i = 0; i < 100; i++) {
@@ -86,7 +88,6 @@ const Homepage = () => {
       animationId = requestAnimationFrame(animate);
     };
 
-    // Event listeners
     const handleMouseMove = (e) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
@@ -161,7 +162,7 @@ const Homepage = () => {
             <Link to="/studio" className="mode-button">
               Enter Studio Mode
             </Link>
-          </motion.div>
+          </div>
         </div>
       </motion.main>
     </div>

@@ -89,14 +89,14 @@ const YouTubeTranscript = ({ transcript, youtubeUrl }) => {
             }
           }
         } catch (langError) {
-          console.log(`Failed to fetch transcript in ${lang}`);
+          if (import.meta.env.DEV) console.log(`Failed to fetch transcript in ${lang}`);
         }
       }
 
       // If we reach here, no captions were found
       setError('No captions available for this video. The video may not have subtitles enabled, or they may be disabled by the creator.');
     } catch (err) {
-      console.error('Error fetching transcript:', err);
+      if (import.meta.env.DEV) console.error('Error fetching transcript:', err);
       setError('Failed to load transcript. Please check the URL and try again.');
     } finally {
       setIsLoading(false);

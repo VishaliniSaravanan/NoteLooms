@@ -16,12 +16,9 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
     }
   }, [isOpen]);
 
-  // Listen for session save events to auto-refresh
   useEffect(() => {
     const handleSessionSaved = () => {
-      if (isOpen) {
-        setTimeout(() => loadSessions(), 500); // Refresh after a short delay
-      }
+      if (isOpen) loadSessions();
     };
     window.addEventListener('sessionSaved', handleSessionSaved);
     return () => window.removeEventListener('sessionSaved', handleSessionSaved);
@@ -33,7 +30,7 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
       const response = await axios.get(endpoint('/api/sessions'));
       setSessions(response.data.sessions || []);
     } catch (error) {
-      console.error("Error loading sessions:", error);
+      if (import.meta.env.DEV) console.error("Error loading sessions:", error);
       toast.error("Failed to load sessions");
     } finally {
       setIsLoading(false);
@@ -51,8 +48,10 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
         onClose();
       }
     } catch (error) {
-      console.error("Error loading session:", error);
-      console.error("Error details:", error.response?.data);
+      if (import.meta.env.DEV) {
+        console.error("Error loading session:", error);
+        console.error("Error details:", error.response?.data);
+      }
       toast.error(`Failed to load session: ${error.response?.data?.error || error.message}`);
     }
   };
@@ -71,8 +70,10 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
       loadSessions();
       setDeleteConfirmId(null);
     } catch (error) {
-      console.error("Error deleting session:", error);
-      console.error("Error details:", error.response?.data);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting session:", error);
+        console.error("Error details:", error.response?.data);
+      }
       toast.error(`Failed to delete session: ${error.response?.data?.error || error.message}`);
     }
   };
@@ -90,7 +91,7 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
         toast.error("Please use the save functionality from the main interface");
       }
     } catch (error) {
-      console.error("Error saving session:", error);
+      if (import.meta.env.DEV) console.error("Error saving session:", error);
       toast.error("Failed to save session");
     }
   };
@@ -123,13 +124,15 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={(e) => e.stopPropagation()}
           className="bg-[--bg-primary] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col border border-[--border-color]"
         >
@@ -164,12 +167,13 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
             ) : (
               <div className="space-y-3">
                 {sessions.map((session) => (
-                  <motion.div
+                  <div
                     key={session.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleLoadSession(session.id)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                    onKeyDown={(e) => e.key === 'Enter' && handleLoadSession(session.id)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-colors duration-200 active:scale-[0.99] ${
                       currentSessionId === session.id
                         ? "border-[--accent-primary] bg-[--accent-primary]/10"
                         : "border-[--border-color] hover:border-[--accent-primary] bg-[--bg-secondary]"
@@ -205,7 +209,7 @@ const SessionHistory = ({ isOpen, onClose, onLoadSession, currentSessionId, onSe
                         {deleteConfirmId === session.id ? "Confirm" : "Delete"}
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}

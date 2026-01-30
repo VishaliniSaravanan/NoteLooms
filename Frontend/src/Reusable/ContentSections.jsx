@@ -39,9 +39,9 @@ const ContentSections = ({
   return (
     <motion.div
       className="space-y-12"
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
     >
       {/* Upload Card – always available so users can add more content */}
       <div className="card">

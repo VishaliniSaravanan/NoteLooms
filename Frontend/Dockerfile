@@ -1,7 +1,9 @@
 FROM node:20-alpine AS build
 
-# Render passes environment variables automatically to Docker builds
-# Vite will read VITE_* prefixed environment variables during build
+# Backend URL is baked in at build time (browser calls from host, so use localhost:5000 when using docker-compose)
+ARG VITE_BACKEND_URL=http://localhost:5000
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

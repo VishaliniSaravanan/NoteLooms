@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# System dependencies
+# System dependencies (poppler-utils required for pdf2image)
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libsm6 \
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     mupdf \
     mupdf-tools \
+    poppler-utils \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -31,4 +32,4 @@ RUN mkdir -p /app/uploads /app/vector_store /app/sessions && \
 EXPOSE 5000
 
 # Run with multiple workers
-CMD ["sh", "-c", "gunicorn -w 3 -b 0.0.0.0:$PORT --timeout 120 App:app"]
+CMD ["sh", "-c", "gunicorn -w 3 -b 0.0.0.0:${PORT:-5000} --timeout 120 App:app"]

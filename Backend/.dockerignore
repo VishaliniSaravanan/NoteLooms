@@ -1,0 +1,27 @@
+# Secrets and env (use docker-compose env_file instead)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+*.log
+
+# Git
+.git
+.gitignore
+
+# Avoid copying large sample PDFs into image (optional; remove if you need them)
+# Samplepdfs/

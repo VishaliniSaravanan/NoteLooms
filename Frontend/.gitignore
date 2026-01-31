@@ -56,7 +56,7 @@ Thumbs.db
 ._*
 
 # npm
-package-lock.json
+# package-lock.json  # Keep this for consistent dependency versions
 yarn.lock
 pnpm-lock.yaml
 

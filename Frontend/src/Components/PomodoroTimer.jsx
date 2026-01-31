@@ -108,110 +108,130 @@ const PomodoroTimer = () => {
   };
 
   return (
-    <div className="w-full pt-2 pb-3 px-1">
-      <div
-        className="relative rounded-2xl overflow-hidden border border-[#1c2f87] shadow-lg cursor-pointer"
+    <div className="w-full pt-1 pb-2 px-1">
+      <motion.div
+        className="relative rounded-xl overflow-hidden border border-[#1c2f87]/80 shadow-md cursor-pointer select-none"
         onClick={() => {
           if (!isExpanded) openSettings();
         }}
+        animate={{ scale: isExpanded ? 1.02 : 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        whileTap={{ scale: 0.98 }}
       >
         <img
           src={BackgroundImage}
-          alt="Pomodoro background"
-          className="absolute inset-0 h-full w-full object-cover"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
           draggable={false}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#081542]/90 via-[#0b1e70]/85 to-[#0e2d9c]/85 backdrop-blur-md" />
-        <div className="relative flex items-center justify-between gap-4 px-4 py-3 text-white">
-          <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.45em] text-white/70">
-              Pomodoro
-            </p>
-            <p className="text-2xl font-mono tracking-[0.2em] leading-tight">
-              {formatCountdown(timeLeft)}
-            </p>
-            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-blue-100 mt-1">
-              {phase === 'focus' ? 'Focus' : 'Break'} · {currentClock}
-            </p>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#081542]/85 via-[#0b1e70]/80 to-[#0e2d9c]/80" />
+        <div className="relative flex items-center justify-between gap-3 px-3 py-2 text-white">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="min-w-0">
+              <p className="text-lg font-mono tabular-nums leading-tight truncate">
+                {formatCountdown(timeLeft)}
+              </p>
+              <p className="text-[0.6rem] text-blue-100/90 truncate">
+                {phase === 'focus' ? 'Focus' : 'Break'} · {currentClock}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 items-end">
+          <div className="flex gap-1.5 shrink-0">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStartPause();
-              }}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white text-[#0b1e70] hover:bg-blue-100 transition-colors"
+              onClick={(e) => { e.stopPropagation(); handleStartPause(); }}
+              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-[#0b1e70] hover:bg-blue-100 transition-colors"
             >
               {isRunning ? 'Pause' : 'Start'}
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleReset();
-              }}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white border border-white/40 hover:bg-white/10 transition-colors"
+              onClick={(e) => { e.stopPropagation(); handleReset(); }}
+              className="px-2 py-1 rounded-md text-[0.65rem] font-semibold text-white/90 border border-white/30 hover:bg-white/10 transition-colors"
             >
               Reset
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mt-3 rounded-2xl bg-[#050d2a] border border-[#10205f] p-4 text-white shadow-2xl"
-          >
-            <h3 className="text-sm font-semibold tracking-[0.3em] uppercase text-blue-200 mb-3">
-              Timer Settings
-            </h3>
+  {isExpanded && (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={handleCancel}
+      />
 
-            <div className="space-y-3">
-              <label className="block text-xs uppercase tracking-[0.3em] text-blue-100">
-                Focus Minutes
-                <input
-                  type="number"
-                  min={1}
-                  max={240}
-                  value={focusDraft}
-                  onChange={(e) => setFocusDraft(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-blue-500/40 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-300 focus:outline-none"
-                />
-              </label>
+      {/* Modal */}
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center px-4"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        onClick={handleCancel}
+      >
+        <div
+          className="w-full max-w-sm rounded-2xl bg-[#050d2a]/95 border border-[#10205f] p-4 text-white"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="text-xs uppercase tracking-wider text-blue-200 mb-3">
+            Pomodoro Settings
+          </p>
 
-              <label className="block text-xs uppercase tracking-[0.3em] text-blue-100">
-                Break Minutes
-                <input
-                  type="number"
-                  min={1}
-                  max={60}
-                  value={breakDraft}
-                  onChange={(e) => setBreakDraft(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-blue-500/40 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-300 focus:outline-none"
-                />
-              </label>
-            </div>
+          <div className="flex gap-2 mb-4">
+            <label className="flex-1">
+              <span className="text-[0.65rem] text-blue-100/80 block mb-1">
+                Focus (min)
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={240}
+                value={focusDraft}
+                onChange={(e) => setFocusDraft(e.target.value)}
+                className="w-full rounded-lg border border-blue-500/40 bg-white/5 px-2 py-2 text-sm text-white focus:border-blue-300 focus:outline-none"
+              />
+            </label>
 
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                onClick={handleCancel}
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-white/70 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-[#0b1e70] hover:bg-blue-100 transition-colors"
-              >
-                Save & Close
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <label className="flex-1">
+              <span className="text-[0.65rem] text-blue-100/80 block mb-1">
+                Break (min)
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={breakDraft}
+                onChange={(e) => setBreakDraft(e.target.value)}
+                className="w-full rounded-lg border border-blue-500/40 bg-white/5 px-2 py-2 text-sm text-white focus:border-blue-300 focus:outline-none"
+              />
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleCancel}
+              className="px-3 py-1.5 text-xs font-semibold text-white/70 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#0b1e70] hover:bg-blue-100"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
+
     </div>
   );
 };

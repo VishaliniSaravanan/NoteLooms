@@ -123,7 +123,7 @@ const Homepage = () => {
         transition={{ duration: 1 }}
       >
         <motion.h1
-          className="title"
+          className="title title-notelooms"
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}

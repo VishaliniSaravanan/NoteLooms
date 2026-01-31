@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+import sys
 import time
 from functools import wraps
 import logging
@@ -14,10 +15,6 @@ from typing import Optional
 from werkzeug.utils import secure_filename
 import pymupdf as fitz
 import google.generativeai as genai
-import pytesseract
-from pdf2image import convert_from_path
-import cv2
-import numpy as np
 from flask_cors import CORS
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from requests.exceptions import ConnectionError
@@ -34,34 +31,36 @@ from PIL import Image
 import datetime
 import googleapiclient.discovery
 
-# Initialize logging FIRST before any imports that might use it
+# Initialize logging first
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# RAG (optional)
+# Load .env early so we can skip heavy RAG imports when disabled
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
+ENABLE_RAG = os.getenv("ENABLE_RAG", "0").lower() in ("1", "true", "yes")
+
+# RAG: only import when enabled (avoids loading langchain/chromadb/sentence-transformers at startup)
 RAGProcessor = None
 rag_import_error = None
-try:
-    from rag_processor import RAGProcessor
-    logger.info("✓ RAG processor imported successfully")
-except Exception as e:
-    rag_import_error = str(e)
-    logger.warning(f"RAG processor import failed: {e}")
-    RAGProcessor = None
+if ENABLE_RAG:
+    try:
+        from rag_processor import RAGProcessor
+        logger.info("✓ RAG processor imported successfully")
+    except Exception as e:
+        rag_import_error = str(e)
+        logger.warning(f"RAG processor import failed: {e}")
+        RAGProcessor = None
+else:
+    rag_import_error = "RAG disabled (set ENABLE_RAG=1 to enable)"
+    logger.info("RAG processor skipped (ENABLE_RAG=0)")
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Load environment variables
-from dotenv import load_dotenv
-import os
-
-# Load .env file from the Backend directory
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(env_path)
 
 # Get API keys from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -86,12 +85,9 @@ if YOUTUBE_API_KEY:
 else:
     logger.warning("YOUTUBE_API_KEY not found - YouTube metadata extraction will be unavailable (transcript extraction will still work)")
 
-# Initialize RAG if available (disabled by default on free tier due to memory constraints)
-# Set ENABLE_RAG=1 environment variable to enable RAG processing
+# Initialize RAG if available (only when ENABLE_RAG=1 and import succeeded)
 rag_processor = None
 rag_init_error = None
-ENABLE_RAG = os.getenv("ENABLE_RAG", "0").lower() in ("1", "true", "yes")
-
 if ENABLE_RAG and RAGProcessor is not None:
     try:
         # Get the directory where App.py is located
@@ -341,7 +337,12 @@ def extract_text_from_pdf(pdf_path: str, max_pages: int = 100) -> Optional[str]:
 
 def extract_text_from_scanned_pdf(pdf_path: str, max_pages: int = 20, dpi: int = 200) -> Optional[str]:
     """Extract text from scanned PDF using OCR with memory optimization."""
-    temp_images = []
+    # Lazy-import heavy OCR stack so startup stays fast when OCR is not used
+    from pdf2image import convert_from_path
+    import cv2
+    import numpy as np
+    import pytesseract
+
     try:
         logger.info(f"Starting OCR processing for {pdf_path} (max {max_pages} pages)")
         

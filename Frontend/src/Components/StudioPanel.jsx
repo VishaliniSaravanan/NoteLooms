@@ -400,11 +400,7 @@ export default function StudioPanel({
                 activeOutput?.type === key
                   ? 'bg-[--accent-primary]/10 border-2 border-[--accent-primary] scale-[1.02] shadow-md'
                   : 'bg-[--card-bg] hover:bg-[--hover-bg] border border-[--border-color] hover:shadow-sm'
-              } ${isGenerating[key] ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${
-                key === 'transcript' && (!currentContent?.transcript || currentContent?.type !== 'youtube') 
-                  ? 'opacity-50' 
-                  : ''
-              }`}
+              } ${isGenerating[key] ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
               whileHover={!isGenerating[key] ? { scale: 1.02 } : {}}
               whileTap={!isGenerating[key] ? { scale: 0.98 } : {}}
             >

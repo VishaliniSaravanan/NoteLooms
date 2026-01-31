@@ -436,7 +436,7 @@ function App() {
 
   const backdropStyle = useMemo(
     () => ({
-      backgroundImage: `linear-gradient(180deg, rgba(15,20,25,0.82) 0%, rgba(26,31,41,0.78) 50%, rgba(15,20,25,0.86) 100%), url(${bgImage})`,
+      backgroundImage: `linear-gradient(180deg, rgba(15,20,25,0.62) 0%, rgba(26,31,41,0.58) 50%, rgba(15,20,25,0.66) 100%), url(${bgImage})`,
     }),
     []
   );

@@ -124,7 +124,7 @@ const ClassicLayout = (props) => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
               <div className="flex flex-col min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-[--accent-primary] leading-tight truncate">
+                <h1 className="title-notelooms text-2xl sm:text-4xl lg:text-5xl font-bold text-[--accent-primary] leading-tight truncate">
                   NOTELOOMS
                 </h1>
                 <p className="text-xs sm:text-sm lg:text-base text-[--text-secondary] mt-1 hidden sm:block">

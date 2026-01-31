@@ -1,4 +1,3 @@
-# Secrets and env (use docker-compose env_file instead)
 .env
 .env.*
 !.env.example
@@ -23,5 +22,3 @@ env/
 .git
 .gitignore
 
-# Avoid copying large sample PDFs into image (optional; remove if you need them)
-# Samplepdfs/

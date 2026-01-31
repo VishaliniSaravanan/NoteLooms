@@ -60,6 +60,7 @@ html {
   overflow-x: hidden;
   width: 100%;
   position: relative;
+  scrollbar-gutter: stable;
 }
 
 /* No smooth scroll on root to reduce lag; touch scrolling for overflow areas */
@@ -67,6 +68,7 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
+  scrollbar-gutter: stable;
 }
 
 .overflow-y-auto, .overflow-auto {

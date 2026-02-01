@@ -15,20 +15,19 @@ const getApiBase = () => {
   // Primary backend URL
   const backendUrl = 'https://notelooms.onrender.com';
   
-  // Allow override via environment variables for local development
-  const envApiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_BACKEND_URL;
+  // Allow override via VITE_BACKEND_URL for local development
+  const envBackendUrl = import.meta.env.VITE_BACKEND_URL;
   
   if (import.meta.env.DEV && typeof window !== 'undefined') {
     console.log(' API Configuration Debug:', {
-      'VITE_API_BASE': import.meta.env.VITE_API_BASE,
       'VITE_BACKEND_URL': import.meta.env.VITE_BACKEND_URL,
-      'Using': envApiBase || backendUrl,
+      'Using': envBackendUrl || backendUrl,
       'Mode': import.meta.env.MODE,
     });
   }
 
   // Use environment variable if set, otherwise use main backend URL
-  return envApiBase || backendUrl;
+  return envBackendUrl || backendUrl;
 };
 
 export const API_BASE = getApiBase();

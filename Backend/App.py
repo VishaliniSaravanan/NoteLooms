@@ -15,6 +15,7 @@ from typing import Optional
 from werkzeug.utils import secure_filename
 import pymupdf as fitz
 from google import genai
+from google.genai import types as genai_types
 from flask_cors import CORS
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from requests.exceptions import ConnectionError
@@ -29,6 +30,7 @@ import zipfile
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from PIL import Image
 import datetime
+import tempfile
 import googleapiclient.discovery
 
 # Initialize logging first
@@ -344,7 +346,7 @@ def extract_text_from_pdf(pdf_path: str, max_pages: int = 100) -> Optional[str]:
         if text_chunks:
             return "\n\n".join(text_chunks)
         return None
-        
+
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {e}")
         return None
@@ -357,55 +359,42 @@ def extract_text_from_scanned_pdf(pdf_path: str, max_pages: int = 20, dpi: int =
     import numpy as np
     import pytesseract
 
-    try:
-        logger.info(f"Starting OCR processing for {pdf_path} (max {max_pages} pages)")
-        
-        # Convert limited number of pages to images
-        images = convert_from_path(pdf_path, first_page=1, last_page=max_pages, dpi=dpi)
-        extracted_text = []
-        
-        for i, image in enumerate(images):
-            if i >= max_pages:
-                break
-                
-            try:
-                # Convert PIL image to OpenCV format
-                img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                
-                # Apply preprocessing for better OCR
-                denoised = cv2.medianBlur(gray, 3)
-                _, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-                
-                # OCR with optimized config
-                custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?;:()[]{}@#$%^&*+-= '
-                text = pytesseract.image_to_string(binary, config=custom_config)
-                
-                if text.strip():
-                    extracted_text.append(f"--- Page {i + 1} ---\n{text.strip()}")
-                
-                # Memory management
-                if i % 5 == 0:
-                    import gc
-                    gc.collect()
-                    
-            except Exception as img_e:
-                logger.error(f"Error processing page {i}: {img_e}")
-                continue
-        
-        if extracted_text:
-            result = "\n\n".join(extracted_text)
-            logger.info(f"OCR extracted {len(extracted_text)} pages of text")
-            return result
-        return None
-        
-    except Exception as e:
-        logger.error(f"Error processing scanned PDF: {e}")
-        return None
-    finally:
-        # Clean up any temporary image files
-        for img_path in temp_images:
-            safe_remove(img_path)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        try:
+            logger.info(f"Starting OCR processing for {pdf_path} (max {max_pages} pages)")
+            images = convert_from_path(
+                pdf_path, first_page=1, last_page=max_pages, dpi=dpi, output_folder=tmpdir
+            )
+            extracted_text = []
+
+            for i, image in enumerate(images):
+                if i >= max_pages:
+                    break
+                try:
+                    img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    denoised = cv2.medianBlur(gray, 3)
+                    _, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                    custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?;:()[]{}@#$%^&*+-= '
+                    text = pytesseract.image_to_string(binary, config=custom_config)
+                    if text.strip():
+                        extracted_text.append(f"--- Page {i + 1} ---\n{text.strip()}")
+                    del img, gray, denoised, binary
+                    if i % 5 == 0:
+                        import gc
+                        gc.collect()
+                except Exception as img_e:
+                    logger.error(f"Error processing page {i}: {img_e}")
+                    continue
+
+            if extracted_text:
+                result = "\n\n".join(extracted_text)
+                logger.info(f"OCR extracted {len(extracted_text)} pages of text")
+                return result
+            return None
+        except Exception as e:
+            logger.error(f"Error extracting text from scanned PDF: {e}")
+            return None
 
 def extract_text_from_youtube(url):
     """Extract text and transcript from YouTube video"""
@@ -505,18 +494,28 @@ def generate_image_description(image_path):
     try:
         if not gemini_client:
             return "⚠ ERROR: Gemini client not initialized. Please check GEMINI_API_KEY."
-        
-        # Use the same stable model as the rest of the app to avoid 404 / unsupported errors
+
+        # Use correct MIME type from file extension (PNG sent as image/jpeg can cause API errors)
+        ext = (os.path.splitext(image_path)[1] or "").lower()
+        mime_type = "image/png" if ext == ".png" else "image/jpeg"
+
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
+
+        # Use SDK Part.from_bytes for image; raw dict format is not reliably accepted
+        image_part = genai_types.Part.from_bytes(data=img_data, mime_type=mime_type)
         response = gemini_client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[
                 "Provide a detailed description of this image for educational purposes.",
-                {"mime_type": "image/jpeg", "data": img_data}
-            ]
+                image_part,
+            ],
         )
-        return response.text.strip().replace("*", "")
+
+        text = getattr(response, "text", None) if response else None
+        if not text or not text.strip():
+            return "⚠ ERROR: No description returned (response may have been blocked or empty)."
+        return text.strip().replace("*", "")
     except Exception as e:
         logger.error(f"Image description error: {e}")
         return f"⚠ ERROR: Unable to describe image - {e}"

@@ -1,41 +1,28 @@
 // API Configuration
-// 
-// IMPORTANT FOR DEPLOYMENT (Render):
-// - You MUST set VITE_BACKEND_URL or VITE_API_BASE environment variable to your backend URL
-// - Example: VITE_BACKEND_URL=https://your-backend.onrender.com
-// - The backend URL must be publicly accessible (not localhost/127.0.0.1)
-// - Backend URL should use HTTPS if frontend uses HTTPS (browser security requirement)
-// - Mobile devices cannot access localhost - they need the actual backend URL
 //
-// For local development:
-// - Defaults to http://127.0.0.1:5000 (works on same machine only)
-// - Or create .env.local with: VITE_BACKEND_URL=http://127.0.0.1:5000
+// BACKEND URL (paste your URL when you deploy):
+// - Set VITE_BACKEND_URL in .env or .env.production to your backend URL.
+// - Local dev: use .env.local with VITE_BACKEND_URL=http://127.0.0.1:5000
+// - Production: set VITE_BACKEND_URL=https://YOUR-BACKEND-URL (e.g. your Render/Railway/Vercel backend)
+//
+// Template – when you have a backend URL, set it via env or paste below:
+// const BACKEND_URL_TEMPLATE = 'https://your-backend.example.com';
 
-const getApiBase = () => {
-  // Primary backend URL
-  const backendUrl = 'https://notelooms.onrender.com';
-  
-  // Allow override via VITE_BACKEND_URL for local development
-  const envBackendUrl = import.meta.env.VITE_BACKEND_URL;
-  
-  if (import.meta.env.DEV && typeof window !== 'undefined') {
-    console.log(' API Configuration Debug:', {
-      'VITE_BACKEND_URL': import.meta.env.VITE_BACKEND_URL,
-      'Using': envBackendUrl || backendUrl,
-      'Mode': import.meta.env.MODE,
-    });
-  }
+const BACKEND_URL_TEMPLATE = ''; // optional: paste your backend URL here if not using .env
 
-  // Use environment variable if set, otherwise use main backend URL
-  return envBackendUrl || backendUrl;
-};
+const DEFAULT_DEV_URL = 'http://127.0.0.1:5000';
 
+function getApiBase() {
+  const envUrl = import.meta.env.VITE_BACKEND_URL;
+  if (envUrl) return envUrl;
+  if (BACKEND_URL_TEMPLATE) return BACKEND_URL_TEMPLATE;
+  return import.meta.env.DEV ? DEFAULT_DEV_URL : '';
+}
+
+// Resolved once at load
 export const API_BASE = getApiBase();
 
-export const endpoint = (path) => {
-  // Ensure path starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE}${normalizedPath}`;
-};
-
-
+export function endpoint(path) {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return API_BASE ? `${API_BASE}${normalized}` : normalized;
+}

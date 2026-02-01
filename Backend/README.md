@@ -44,6 +44,67 @@ python App.py
 
 ---
 
+## 🐳 Run with Docker
+
+Build and run the backend in a container (port 5000):
+
+```bash
+# From project root
+cd Backend
+
+# Build the image
+docker build -t notelooms-backend .
+
+# Run in background (-d), map host 5000 → container 5000 (-p 5000:5000)
+docker run -d -p 5000:5000 --env-file .env --name notelooms-backend notelooms-backend
+```
+
+**Check it’s running**
+```bash
+docker ps
+# You should see notelooms-backend listed.
+```
+
+**Test locally**
+```bash
+curl http://localhost:5000/health
+# Should return: {"status":"ok"}
+```
+
+**Stop/remove**
+```bash
+docker stop notelooms-backend
+docker rm notelooms-backend
+```
+
+---
+
+## 🌐 Expose with ngrok (for external / mobile testing)
+
+To get a public URL (e.g. for a phone or another machine), use [ngrok](https://ngrok.com):
+
+1. **Install ngrok**  
+   Download from [ngrok.com](https://ngrok.com/download) or:  
+   `choco install ngrok` (Windows) / `brew install ngrok` (Mac).
+
+2. **Start your backend**  
+   Either run `python App.py` or the Docker container so the app is listening on port 5000.
+
+3. **Expose port 5000**
+   ```bash
+   ngrok http 5000
+   ```
+   ngrok will print a public URL like `https://xxxx-xx-xx-xx-xx.ngrok-free.app`.
+
+4. **Use the ngrok URL as backend**
+   - In the **frontend**, set `VITE_BACKEND_URL` to that URL (e.g. in `.env.local` or when building).
+   - Test: `curl https://YOUR-NGROK-URL/health` — should return `{"status":"ok"}`.
+
+5. **Docker + ngrok**  
+   Run the container with `-p 5000:5000` as above, then run `ngrok http 5000` on the same machine. Use the ngrok URL in the frontend.
+
+---
+
 ## 📁 Project Structure
 
 ```

@@ -67,11 +67,25 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_CHAT_API_KEY = os.getenv("GEMINI_CHAT_API_KEY") or GEMINI_API_KEY
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
-# Configure the default client for non-chat features
+# Initialize Gemini clients using new SDK (google-genai)
+gemini_client = None
+gemini_chat_client = None
+
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+        logger.info("✓ Gemini client initialized successfully")
+    except Exception as e:
+        logger.warning(f"Gemini client initialization failed: {e}")
 else:
     logger.warning("GEMINI_API_KEY not found in environment variables")
+
+if GEMINI_CHAT_API_KEY:
+    try:
+        gemini_chat_client = genai.Client(api_key=GEMINI_CHAT_API_KEY)
+        logger.info("✓ Gemini chat client initialized successfully")
+    except Exception as e:
+        logger.warning(f"Gemini chat client initialization failed: {e}")
 
 # Initialize YouTube API client conditionally
 youtube = None
@@ -446,9 +460,14 @@ def extract_text_from_youtube(url):
 def generate_gemini_response(prompt):
     """Generate response with proper error handling and model selection."""
     try:
+        if not gemini_client:
+            return "⚠ ERROR: Gemini client not initialized. Please check GEMINI_API_KEY."
+        
         # Using gemini-2.5-flash as it's available in the environment
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(prompt)
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
         return response.text.strip().replace("*", "")
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
@@ -465,10 +484,14 @@ def generate_chat_response(prompt):
     Falls back to GEMINI_API_KEY when GEMINI_CHAT_API_KEY is not set.
     """
     try:
-        # Reconfigure client with chat key for this call
-        genai.configure(api_key=GEMINI_CHAT_API_KEY)
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(prompt)
+        if not gemini_chat_client:
+            return "⚠ ERROR: Gemini chat client not initialized. Please check GEMINI_CHAT_API_KEY."
+        
+        # Use the dedicated chat client with chat key
+        response = gemini_chat_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
         return response.text.strip().replace("*", "")
     except Exception as e:
         logger.error(f"Gemini Chat API error: {e}")
@@ -480,14 +503,19 @@ def generate_chat_response(prompt):
 
 def generate_image_description(image_path):
     try:
+        if not gemini_client:
+            return "⚠ ERROR: Gemini client not initialized. Please check GEMINI_API_KEY."
+        
         # Use the same stable model as the rest of the app to avoid 404 / unsupported errors
-        model = genai.GenerativeModel("gemini-2.5-flash")
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
-        response = model.generate_content([
-            "Provide a detailed description of this image for educational purposes.",
-            {"mime_type": "image/jpeg", "data": img_data}
-        ])
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                "Provide a detailed description of this image for educational purposes.",
+                {"mime_type": "image/jpeg", "data": img_data}
+            ]
+        )
         return response.text.strip().replace("*", "")
     except Exception as e:
         logger.error(f"Image description error: {e}")

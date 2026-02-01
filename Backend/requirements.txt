@@ -10,15 +10,16 @@ python-dotenv>=1.0.0
 python-multipart>=0.0.6
 
 # AI & Language Models
-google-generativeai>=0.3.0
+google-genai
 google-api-python-client>=2.100.0
 
-# RAG & Vector Database
-langchain>=0.1.9
-langchain-community>=0.0.21
-langchain-huggingface>=0.0.1
-chromadb>=0.4.21
-sentence-transformers>=2.6.0
+# RAG & Vector Database (OPTIONAL - only enable if using local embeddings)
+# Uncomment the lines below only if ENABLE_RAG=1 and you have enough memory
+# langchain>=0.1.9
+# langchain-community>=0.0.21
+# langchain-huggingface>=0.0.1
+# chromadb>=0.4.21
+# sentence-transformers>=2.6.0
 
 # PDF & Document Processing
 pymupdf>=1.23.8

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 from werkzeug.utils import secure_filename
 import pymupdf as fitz
-import google.generativeai as genai
+from google import genai
 from flask_cors import CORS
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from requests.exceptions import ConnectionError

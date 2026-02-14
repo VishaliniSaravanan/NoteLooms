@@ -22,3 +22,12 @@ env/
 .git
 .gitignore
 
+# Root .dockerignore
+.git
+.github
+.vscode
+node_modules
+__pycache__
+.env
+*.md
+*.log

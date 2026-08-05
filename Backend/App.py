@@ -15,7 +15,7 @@ import pymupdf as fitz
 from google import genai
 from google.genai import types as genai_types
 from flask_cors import CORS
-from tenacity import retry, stop_after_attempt, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
 import datetime

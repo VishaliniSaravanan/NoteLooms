@@ -36,6 +36,7 @@ const MobileMenu = ({ mobileTab, setMobileTab, activeSection, setActiveSection }
                 { id: "notes", label: "Notes" },
                 { id: "mcqs", label: "MCQs" },
                 { id: "flashcards", label: "Flashcards" },
+                { id: "document_viewer", label: "Source Document" },
                 { id: "image_description", label: "Image Description" },
               ].map(({ id, label }) => (
                 <button

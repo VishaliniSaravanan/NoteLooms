@@ -234,6 +234,7 @@ const useFileHandling = ({
         youtube_id: fileData.youtube_id || null,
         sourceMeta: {
           file: sourceInfo?.file || null,
+          previewUrl: sourceInfo?.preview || null,
           youtubeUrl,
         },
       };

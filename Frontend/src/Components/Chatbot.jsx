@@ -157,7 +157,8 @@ function Chatbot({ content, onClose }) {
       });
 
       const botResponse = response.data.response;
-      setMessages((prev) => [...prev, { sender: "bot", text: botResponse }]);
+      const botSources = response.data.sources || [];
+      setMessages((prev) => [...prev, { sender: "bot", text: botResponse, sources: botSources }]);
     } catch (error) {
       const errorMessage = error.response?.data?.error || "Sorry, I couldn't process your request. Please try again.";
       setMessages((prev) => [...prev, { sender: "bot", text: errorMessage }]);
@@ -206,13 +207,25 @@ function Chatbot({ content, onClose }) {
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[70%] p-3 rounded-lg break-words ${
+              className={`max-w-[85%] p-3 rounded-lg break-words ${
                 msg.sender === "user"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-white"
               }`}
             >
               <MemoizedMessageContent text={msg.text} />
+              {msg.sources && msg.sources.length > 0 && (
+                <div className="mt-3 pt-2 border-t border-gray-600 text-xs space-y-1.5">
+                  <div className="font-semibold text-amber-300 flex items-center gap-1">
+                    Cited Evidence:
+                  </div>
+                  {msg.sources.map((src) => (
+                    <div key={src.id} className="bg-gray-800/90 p-2 rounded border border-gray-600 text-gray-200">
+                      <span className="font-semibold text-amber-200">Page {src.page}:</span> "{src.snippet}"
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}

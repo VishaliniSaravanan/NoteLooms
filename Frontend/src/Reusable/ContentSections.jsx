@@ -10,6 +10,7 @@ const FlashcardCarousel = lazy(() =>
   import("../Components/FlashcardCarousel")
 );
 const MCQs = lazy(() => import("../Components/MCQs"));
+const DocumentViewer = lazy(() => import("../Components/DocumentViewer"));
 
 const ContentSections = ({
   isLoading,
@@ -353,6 +354,23 @@ const ContentSections = ({
             onUpdate={updateCurrentContent}
             numQuestions={numQuestions}
             setNumQuestions={setNumQuestions}
+          />
+        </Suspense>
+      ) : activeSection === "document_viewer" ? (
+        <Suspense
+          fallback={
+            <div className="card text-center py-16">
+              <p className="text-lg text-[--text-secondary]">
+                Loading Source Document…
+              </p>
+            </div>
+          }
+        >
+          <DocumentViewer
+            currentContent={currentContent}
+            speakText={speakText}
+            stopSpeaking={stopSpeaking}
+            isSpeaking={isSpeaking}
           />
         </Suspense>
       ) : (

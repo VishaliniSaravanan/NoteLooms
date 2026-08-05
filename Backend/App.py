@@ -23,7 +23,9 @@ import datetime
 import tempfile
 from xml.sax.saxutils import escape
 
-logging.basicConfig(level=logging.INFO)
+# Use WARNING in production to reduce log noise and I/O overhead
+_log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(level=getattr(logging, _log_level, logging.WARNING))
 logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
@@ -65,18 +67,21 @@ gemini_chat_client = None
 if GEMINI_API_KEY:
     try:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        logger.info("✓ Gemini client initialized successfully")
+        logger.info("✓ Gemini client initialized")
     except Exception as e:
-        logger.warning(f"Gemini client initialization failed: {e}")
+        logger.warning(f"Gemini client init failed: {e}")
 else:
-    logger.warning("GEMINI_API_KEY not found in environment variables")
+    logger.warning("GEMINI_API_KEY not set")
 
-if GEMINI_CHAT_API_KEY:
+# Reuse the same client if keys are identical (saves ~15 MB RAM)
+if GEMINI_CHAT_API_KEY and GEMINI_CHAT_API_KEY != GEMINI_API_KEY:
     try:
         gemini_chat_client = genai.Client(api_key=GEMINI_CHAT_API_KEY)
-        logger.info("✓ Gemini chat client initialized successfully")
+        logger.info("✓ Separate Gemini chat client initialized")
     except Exception as e:
-        logger.warning(f"Gemini chat client initialization failed: {e}")
+        logger.warning(f"Gemini chat client init failed: {e}")
+else:
+    gemini_chat_client = gemini_client
 
 youtube = None
 def _get_youtube_client():
@@ -353,19 +358,15 @@ def _get_removal_delay(filepath: str) -> float:
         return 0.3
 
 
-def safe_remove(filepath: str, max_retries: int = 5, initial_delay: float | None = None) -> bool:
+def safe_remove(filepath: str, max_retries: int = 3, initial_delay: float | None = None) -> bool:
     """Safely remove a file with retry + exponential back-off."""
     if not os.path.exists(filepath):
         return True
     delay = initial_delay if initial_delay is not None else _get_removal_delay(filepath)
     for attempt in range(max_retries):
         try:
-            gc.collect()
             os.remove(filepath)
-            if not os.path.exists(filepath):
-                return True
-            if attempt < max_retries - 1:
-                time.sleep(delay * (attempt + 1))
+            return True
         except (PermissionError, OSError) as e:
             if attempt == max_retries - 1:
                 logger.warning(f"Failed to remove {filepath}: {e}")

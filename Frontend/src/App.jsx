@@ -6,7 +6,6 @@ import useAppState from "./hooks/useAppState";
 import useFileHandling from "./hooks/useFileHandling";
 import bgImage from "./utils/Background.jpg";
 
-// Lazy-load the large layout shells so the initial classic view stays fast
 const StudioLayout = lazy(() => import("./Layout/StudioLayout"));
 const ClassicLayout = lazy(() => import("./Layout/ClassicLayout"));
 const SessionHistory = lazy(() => import("./Reusable/SessionHistory"));
@@ -173,16 +172,16 @@ function App() {
     try {
       let res;
       if (type === 'ppt' || format === 'ppt') {
-        res = await axios.post(endpoint('/generate/ppt'), { 
-          text: currentContent.raw_text, 
+        res = await axios.post(endpoint('/generate/ppt'), {
+          text: currentContent.raw_text,
           summary: contentData?.summary || currentContent.summary,
           notes: contentData?.short_notes || currentContent.short_notes
         }, { responseType: 'blob' });
       } else {
-        res = await axios.post(endpoint('/download'), { 
-          type, 
-          format, 
-          content: contentData 
+        res = await axios.post(endpoint('/download'), {
+          type,
+          format,
+          content: contentData
         }, { responseType: 'blob' });
       }
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -464,7 +463,7 @@ function App() {
           <ClassicLayout {...sharedProps} />
         </Suspense>
       )}
-      
+
       {/* Session History Modal */}
       <Suspense fallback={null}>
         <SessionHistory

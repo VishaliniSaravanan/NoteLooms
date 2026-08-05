@@ -8,6 +8,7 @@ import base64
 import random
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 from typing import Optional
 from werkzeug.utils import secure_filename
 import pymupdf as fitz

@@ -190,7 +190,7 @@ const useFileHandling = ({
       }
 
       const cleanSummary = fileData.summary ? fileData.summary.replace(/\*\*/g, "") : "";
-      const cleanNotes = fileData.short_notes
+      const cleanNotes = fileData.short_notes && typeof fileData.short_notes === "string"
         ? fileData.short_notes
             .replace(/\*/g, "")
             .replace(/\//g, "")
@@ -201,8 +201,8 @@ const useFileHandling = ({
         : "";
       const cleanFlashcards = fileData.flashcards && fileData.flashcards.length > 0
         ? fileData.flashcards.map((card) => ({
-            front: card.front.replace(/\*\*/g, ""),
-            back: card.back.replace(/\*\*/g, ""),
+            front: card.front ? card.front.replace(/\*\*/g, "") : "",
+            back: card.back ? card.back.replace(/\*\*/g, "") : "",
           }))
         : [];
       const cleanMcqs = fileData.mcqs && fileData.mcqs.length > 0

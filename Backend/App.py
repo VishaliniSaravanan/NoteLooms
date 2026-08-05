@@ -48,7 +48,7 @@ else:
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-_max_mb = int(os.getenv("MAX_UPLOAD_MB", "16"))
+_max_mb = int(os.getenv("MAX_UPLOAD_MB", "20"))
 app.config["MAX_CONTENT_LENGTH"] = _max_mb * 1024 * 1024
 
 UPLOAD_FOLDER = "uploads"
@@ -115,6 +115,12 @@ else:
         logger.info("RAG processor disabled (set ENABLE_RAG=1 to enable)")
     elif rag_import_error:
         logger.warning(f"RAG processor not available: {rag_import_error}")
+
+
+@app.errorhandler(413)
+def request_too_large(e):
+    max_mb = int(os.getenv("MAX_UPLOAD_MB", "20"))
+    return jsonify({"error": f"File too large. Maximum upload size is {max_mb} MB. Please use a smaller file."}), 413
 
 
 @app.get('/')

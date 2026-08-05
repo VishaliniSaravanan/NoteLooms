@@ -70,9 +70,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 #   --max-requests 200     : recycle worker after 200 requests (prevents slow memory leaks)
 #   --max-requests-jitter 50 : random jitter so all workers don't restart at once
 CMD ["sh", "-c", "gunicorn -w ${WEB_CONCURRENCY:-1} -b 0.0.0.0:${PORT:-5000} \
-    --timeout 90 \
+    --timeout 120 \
     --max-requests 200 \
     --max-requests-jitter 50 \
+    --limit-request-line 8190 \
+    --limit-request-field_size 8190 \
     --access-logfile - \
     --error-logfile - \
     App:app"]

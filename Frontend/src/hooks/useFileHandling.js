@@ -2,6 +2,40 @@ import axios from "axios";
 import toast from 'react-hot-toast';
 import { endpoint } from "../utils/api";
 
+// Max file size allowed (must match backend MAX_UPLOAD_MB)
+const MAX_FILE_MB = 15;
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+
+/**
+ * Compress an image File using a canvas to reduce size before upload.
+ * Returns a new File (same name) at reduced resolution / quality.
+ */
+async function compressImage(file, maxDim = 1920, quality = 0.8) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
+        else { width = Math.round((width * maxDim) / height); height = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 const useFileHandling = ({
   previewFiles,
   setPreviewFiles,
@@ -71,21 +105,44 @@ const useFileHandling = ({
     const formData = new FormData();
     let hasFiles = false;
 
-    previewFiles.forEach((previewFile) => {
+    // --- Client-side validation & image compression ---
+    for (const previewFile of previewFiles) {
       if (previewFile.type === "youtube") {
         formData.append("youtube_url", previewFile.url);
-      } else if (previewFile.file) {
-        formData.append(`files`, previewFile.file);
-        hasFiles = true;
+        continue;
       }
-    });
+      if (!previewFile.file) continue;
+
+      let fileToUpload = previewFile.file;
+
+      // Compress images before upload
+      if (fileToUpload.type?.startsWith("image/")) {
+        try {
+          fileToUpload = await compressImage(fileToUpload);
+        } catch (e) {
+          // compression failed — use original
+        }
+      }
+
+      // Block files still over the limit after compression
+      if (fileToUpload.size > MAX_FILE_BYTES) {
+        const sizeMB = (fileToUpload.size / (1024 * 1024)).toFixed(1);
+        const errorMsg = `"${previewFile.file.name}" is ${sizeMB} MB — max allowed is ${MAX_FILE_MB} MB. Please use a smaller file.`;
+        setError(errorMsg);
+        setIsLoading(false);
+        toast.error(errorMsg, { id: "upload" });
+        return;
+      }
+
+      formData.append("files", fileToUpload);
+      hasFiles = true;
+    }
 
     if (!hasFiles && !previewFiles.some(f => f.type === "youtube")) {
       const errorMsg = "No valid files to upload.";
       setError(errorMsg);
       setIsLoading(false);
       toast.error(errorMsg, { id: "upload" });
-      if (import.meta.env.DEV) console.error(errorMsg);
       return;
     }
 
@@ -97,17 +154,19 @@ const useFileHandling = ({
       processResponse(response.data, previewFiles);
       const currentFiles = [...previewFiles];
       currentFiles.forEach((file) => {
-        if (file?.preview) {
-          URL.revokeObjectURL(file.preview);
-        }
+        if (file?.preview) URL.revokeObjectURL(file.preview);
       });
       setPreviewFiles([]);
-      // After upload completes, hide any preview modal in both layouts
       setIsPreviewModalOpen(false);
       setIsPreviewMinimized(false);
     } catch (error) {
       console.error("Upload error:", error);
-      const errorMsg = error.response?.data?.error || error.message || "Failed to process the upload. Please ensure the URL is valid or try another file.";
+      let errorMsg;
+      if (error.response?.status === 413) {
+        errorMsg = `File too large for the server. Please use files under ${MAX_FILE_MB} MB.`;
+      } else {
+        errorMsg = error.response?.data?.error || error.message || "Failed to process the upload. Please try a smaller file or different URL.";
+      }
       setError(errorMsg);
       toast.error(errorMsg, { id: "upload" });
     } finally {

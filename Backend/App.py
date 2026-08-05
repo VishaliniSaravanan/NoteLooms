@@ -117,6 +117,11 @@ else:
         logger.warning(f"RAG processor not available: {rag_import_error}")
 
 
+@app.get('/')
+def index():
+    return jsonify({"status": "ok", "service": "NoteLooms Backend"})
+
+
 @app.get('/health')
 def health():
     return jsonify({

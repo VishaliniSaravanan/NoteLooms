@@ -208,9 +208,13 @@ const useFileHandling = ({
       const cleanMcqs = fileData.mcqs && fileData.mcqs.length > 0
         ? fileData.mcqs.map((mcq) => ({
             ...mcq,
-            question: mcq.question.replace(/\*\*/g, ""),
-            options: mcq.options.map((option) => option.replace(/\*\*/g, "")),
-            answer: mcq.answer.replace(/\*\*/g, ""),
+            question: mcq.question ? mcq.question.replace(/\*\*/g, "") : "",
+            options: mcq.options.map((option) =>
+              typeof option === "string"
+                ? option.replace(/\*\*/g, "")
+                : { ...option, text: option.text ? option.text.replace(/\*\*/g, "") : "" }
+            ),
+            answer: mcq.answer ? mcq.answer.replace(/\*\*/g, "") : "",
           }))
         : [];
       const cleanImageDescription = fileData.image_description

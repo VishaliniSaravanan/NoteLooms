@@ -57,7 +57,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_CHAT_API_KEY = os.getenv("GEMINI_CHAT_API_KEY") or GEMINI_API_KEY
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
 gemini_client = None
 gemini_chat_client = None
@@ -372,38 +372,56 @@ def safe_remove(filepath: str, max_retries: int = 3, initial_delay: float | None
             time.sleep(min(delay * (2 ** attempt) + (random.random() * 0.1), 5.0))
     return False
 
+def _call_gemini_api(client, contents):
+    """
+    Call Gemini API with automatic retries for 503 (high demand) / 429 (rate limit)
+    and automatic fallback across models if high demand or model error persists.
+    """
+    if not client:
+        return "⚠ ERROR: Gemini client not initialized. Please check GEMINI_API_KEY."
+
+    models_to_try = [GEMINI_MODEL, "gemini-2.0-flash", "gemini-1.5-flash"]
+    models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
+
+    last_error = None
+    for model_name in models_to_try:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(model=model_name, contents=contents)
+                text = getattr(response, "text", None)
+                if text and text.strip():
+                    return text.strip().replace("*", "")
+            except Exception as e:
+                last_error = str(e)
+                err_str = last_error.lower()
+                logger.warning(f"Gemini API error (model {model_name}, attempt {attempt+1}): {e}")
+
+                # 503 UNAVAILABLE (high demand) or 429 (rate limit) -> retry with backoff
+                if "503" in err_str or "unavailable" in err_str or "429" in err_str or "quota" in err_str:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                # If 404 model not found, try next fallback model
+                if "404" in err_str or "not found" in err_str:
+                    break
+                time.sleep(1)
+
+    if last_error:
+        if "503" in last_error or "UNAVAILABLE" in last_error:
+            return "⚠ Google AI is currently experiencing high demand. Please try again in a few seconds."
+        if "429" in last_error or "quota" in last_error.lower():
+            return "⚠ API quota exceeded. Please try again later."
+        return f"⚠ ERROR: {last_error}"
+    return "⚠ ERROR: No response generated."
+
+
 def generate_gemini_response(prompt):
-    """Generate response with proper error handling."""
-    try:
-        if not gemini_client:
-            return "⚠ ERROR: Gemini client not initialized. Please check GEMINI_API_KEY."
-        response = gemini_client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-        text = getattr(response, "text", None)
-        if not text or not text.strip():
-            return "⚠ ERROR: No response generated."
-        return text.strip().replace("*", "")
-    except Exception as e:
-        logger.error(f"Gemini API error: {e}")
-        if "429" in str(e): return "⚠ ERROR: API quota exceeded. Please try again later."
-        if "404" in str(e): return "⚠ ERROR: Model not available. Please check the model configuration."
-        return f"⚠ ERROR: {e}"
+    """Generate response with proper error handling and retries."""
+    return _call_gemini_api(gemini_client, prompt)
 
 
 def generate_chat_response(prompt):
     """Use dedicated chat API key if provided, falls back to main key."""
-    try:
-        if not gemini_chat_client:
-            return "⚠ ERROR: Gemini chat client not initialized. Please check GEMINI_CHAT_API_KEY."
-        response = gemini_chat_client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-        text = getattr(response, "text", None)
-        if not text or not text.strip():
-            return "⚠ ERROR: No chat response generated."
-        return text.strip().replace("*", "")
-    except Exception as e:
-        logger.error(f"Gemini Chat API error: {e}")
-        if "429" in str(e): return "⚠ ERROR: Chat API quota exceeded. Please try again later."
-        if "404" in str(e): return "⚠ ERROR: Chat model not available."
-        return f"⚠ ERROR: {e}"
+    return _call_gemini_api(gemini_chat_client, prompt)
 
 
 def generate_image_description(image_path):
@@ -422,14 +440,7 @@ def generate_image_description(image_path):
                 image_part,
             ],
         )
-        response = gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=content,
-        )
-        text = getattr(response, "text", None) if response else None
-        if not text or not text.strip():
-            return "⚠ ERROR: No description returned."
-        return text.strip().replace("*", "")
+        return _call_gemini_api(gemini_client, content)
     except Exception as e:
         logger.error(f"Image description error: {e}")
         return f"⚠ ERROR: Unable to describe image - {e}"
